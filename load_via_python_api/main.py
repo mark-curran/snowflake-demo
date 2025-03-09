@@ -4,9 +4,8 @@ from io import BytesIO, StringIO
 from typing import TypedDict
 from uuid import uuid4
 
-from snowflake.connector import SnowflakeConnection, connect
-
 from logger import logger
+from snowflake.connector import SnowflakeConnection, connect
 
 
 class Person(TypedDict):
