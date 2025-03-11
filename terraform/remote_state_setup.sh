@@ -3,7 +3,7 @@
 echo "Executing Terraform remote state setup script."
 
 RESOURCE_GROUP_CONFIG_FILE="resource_group.json"
-STORAGE_ACCOUNT_FILE="storage_account.json"
+ACCOUNT_INFORMATION_FILE="account_information.json"
 
 # Azure resource group and location
 echo "Reading config file: $RESOURCE_GROUP_CONFIG_FILE"
@@ -12,23 +12,25 @@ RESOURCE_GROUP_TAG_NAME=$(jq -r '.RESOURCE_GROUP_TAG_NAME' $RESOURCE_GROUP_CONFI
 BLOB_CONTAINER=$(jq -r '.BLOB_CONTAINTER' $RESOURCE_GROUP_CONFIG_FILE)
 BLOB_KEY_NAME=$(jq -r '.BLOB_KEY_NAME' $RESOURCE_GROUP_CONFIG_FILE)
 
-# Check if the storage_account.json file exists
-echo "Checking if $STORAGE_ACCOUNT_FILE exists."
-if [ -f "$STORAGE_ACCOUNT_FILE" ]; then
-    echo "Storage account file exists. Reading STORAGE_ACCOUNT_NAME from it."
+# Check if the account_information.json file exists
+echo "Checking if $ACCOUNT_INFORMATION_FILE exists."
+if [ -f "$ACCOUNT_INFORMATION_FILE" ]; then
+    echo "Account information file exists. Reading STORAGE_ACCOUNT_NAME and AZ_SUBSCRIPTION_DEFAULT_LOCATION from it."
     
-    # Read STORAGE_ACCOUNT_NAME from the file
-    STORAGE_ACCOUNT_NAME=$(jq -r '.STORAGE_ACCOUNT_NAME' $STORAGE_ACCOUNT_FILE)
+    # Read variables from the account information file.
+    STORAGE_ACCOUNT_NAME=$(jq -r '.STORAGE_ACCOUNT_NAME' $ACCOUNT_INFORMATION_FILE)
+    AZ_SUBSCRIPTION_DEFAULT_LOCATION=$(jq -r '.AZ_SUBSCRIPTION_DEFAULT_LOCATION' $ACCOUNT_INFORMATION_FILE)
+    SUBSCRIPTION_ID=$(jq -r '.SUBSCRIPTION_ID' $ACCOUNT_INFORMATION_FILE)
 else
 
-    echo "Store account file does not exist, checking for storage account name."
+    echo "Account information file does not exist, checking for storage account name."
 
     # Fetch the current subscription from the configured cli.
     echo "Fetching current subscription id."
     SUBSCRIPTION_ID=$(az account show --query "id" -o tsv)
     echo "Current subscruption id: $SUBSCRIPTION_ID"
 
-    # Check if the resource group exists
+    # Check if the resource group exists.
     echo "Checking if resource group $RESOURCE_GROUP_NAME exists."
     az group show --name $RESOURCE_GROUP_NAME > /dev/null 2>&1
     if [ $? -ne 0 ]; then
@@ -57,13 +59,19 @@ else
     az resource tag --tags $RESOURCE_GROUP_TAG_NAME=$STORAGE_ACCOUNT_NAME --id /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP_NAME
 
     # Store the generated storage account name in the local JSON file
-    echo "Storing key value pair $RESOURCE_GROUP_TAG_NAME : $STORAGE_ACCOUNT_NAME in the file  $STORAGE_ACCOUNT_FILE"
-    echo "{\"STORAGE_ACCOUNT_NAME\": \"$STORAGE_ACCOUNT_NAME\"}" > $STORAGE_ACCOUNT_FILE
+    echo "Storing key value pair $RESOURCE_GROUP_TAG_NAME : $STORAGE_ACCOUNT_NAME in the file  $ACCOUNT_INFORMATION_FILE"
+    echo "{\"STORAGE_ACCOUNT_NAME\": \"$STORAGE_ACCOUNT_NAME\"}" > $ACCOUNT_INFORMATION_FILE
 
     # Get the location used for the storage account and save that, too.
-    echo "Storing the storage account default location in the file $STORAGE_ACCOUNT_FILE"
+    echo "Storing the storage account default location in the file $ACCOUNT_INFORMATION_FILE"
     AZ_SUBSCRIPTION_DEFAULT_LOCATION=$(az configure --list-defaults --query "[?name=='location'].value" -o tsv)
-    jq '. + {"AZ_SUBSCRIPTION_DEFAULT_LOCATION": "'$AZ_SUBSCRIPTION_DEFAULT_LOCATION'"}' $STORAGE_ACCOUNT_FILE > temp.json && mv temp.json $STORAGE_ACCOUNT_FILE
+
+    # Update the ACCOUNT_INFORMATION_FILE file.
+    echo "Updating the account information file: $ACCOUNT_INFORMATION_FILE"
+    TEMP_FILE=$(mktemp)
+    jq '. + {"SUBSCRIPTION_ID": "'$SUBSCRIPTION_ID'", "AZ_SUBSCRIPTION_DEFAULT_LOCATION": "'$AZ_SUBSCRIPTION_DEFAULT_LOCATION'"}' \
+    "$ACCOUNT_INFORMATION_FILE" > "$TEMP_FILE" \
+    && mv "$TEMP_FILE" "$ACCOUNT_INFORMATION_FILE"
 fi
 
 # Registering the Microsoft.Storage resource provider.
@@ -96,6 +104,7 @@ echo "Resetting local terraform variables."
 rm terraform.tfvars
 touch terraform.tfvars
 echo "az_subscription_default_location = \"$AZ_SUBSCRIPTION_DEFAULT_LOCATION\"" >> terraform.tfvars
+echo "subscription_id = \"$SUBSCRIPTION_ID\"" >> terraform.tfvars
 
 echo "Initializing Terraform bakend."
 terraform init \

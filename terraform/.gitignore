@@ -1,5 +1,5 @@
 # Name of the local storage account.
-storage_account.json
+account_information.json
 
 # Local .terraform directories
 **/.terraform/*

@@ -38,4 +38,6 @@ source remote_state_setup.sh
 
 Note, that all relevant data will be saved as tags on the resource group. This means if a colleague has already run the setup script, then the script will pull the relevant value from the tag, and no new Azure resources will be created.
 
-Also not that this script will export an access key for the remote state to the shell variable `ARM_ACCESS_KEY`.
+There are two important side effects of this scripts
+* This script will export an access key for the remote state to the shell variable `ARM_ACCESS_KEY`.
+* This script will create some git ignored files for variables that your terraform setup needs, such as a default Azure location and the randomly generated name of the storage account required to access the remote Terraform state.
