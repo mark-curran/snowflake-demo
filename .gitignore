@@ -4,3 +4,9 @@ rsa_key.pub
 connection_config.json
 
 __pycache__
+
+# Ignore node packages.
+node_modules
+
+# Ignore compiled javascript
+dist
