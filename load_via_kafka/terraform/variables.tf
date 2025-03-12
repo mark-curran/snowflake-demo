@@ -9,3 +9,9 @@ variable "event_hub_name" {
   type        = string
   nullable    = false
 }
+
+variable "auth_rule_name" {
+  description = "Name of the authorisation rule used to produce and consume from the event hub."
+  type = string
+  nullable = false
+}

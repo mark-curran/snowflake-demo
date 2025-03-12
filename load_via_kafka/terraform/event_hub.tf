@@ -22,3 +22,13 @@ resource "azurerm_eventhub" "event_hub" {
   partition_count   = 2
   message_retention = 1
 }
+
+resource "azurerm_eventhub_namespace_authorization_rule" "auth_rule" {
+  name = var.auth_rule_name
+  resource_group_name = azurerm_resource_group.event_hub_rg.name
+  namespace_name = azurerm_eventhub_namespace.event_hub_namespace.name
+
+  listen = true
+  send = true
+  manage = false
+}
