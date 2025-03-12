@@ -1,0 +1,15 @@
+{
+  "name": "load_via_kafka",
+  "version": "1.0.0",
+  "description": "Load data into Snowflake via Kafka.",
+  "main": "index.js",
+  "scripts": {
+    "test": "run"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "prettier": "3.5.3",
+    "typescript": "^5.8.2"
+  }
+}

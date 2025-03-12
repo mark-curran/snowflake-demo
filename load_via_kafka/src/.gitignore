@@ -1,0 +1,5 @@
+# Ignore node packages.
+node_modules
+
+# Ignore compiled javascript
+dist
