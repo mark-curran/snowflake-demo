@@ -5,7 +5,7 @@
             "type": "node",
             "request": "launch",
             "name": "Launch TypeScript",
-            "program": "${workspaceFolder}/load_via_kafka/src/dist/index.ts",
+            "program": "${workspaceFolder}/load_via_kafka/dist/index.ts",
             "preLaunchTask": "tsc: build - tsconfig.json",
             "outFiles": [
                 "${workspaceFolder}/dist/**/*.js"
