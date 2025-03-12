@@ -2,9 +2,23 @@
 
 Information on setting up Kafka via Azure Event Hubs.
 
-## Setup Steps
+## Application Setup Steps
 
-Some setup steps, which we need to clean up later...
+Setup all the infrastructure from the root terraform directory
+
+```shell
+terraform apply
+```
+
+Get the primary connection string.
+
+```shell
+source get_primary_connection_string.sh
+```
+
+## Runtime Setup Steps
+
+Some setup steps, which we need to clean up later, from the root directory...
 
 ```shell
 asdf plugin add nodejs
@@ -14,10 +28,6 @@ asdf set nodejs 22.14.0
 
 ```shell
 npm install
-```
-
-```shell
-
 ```
 
 ## Sources

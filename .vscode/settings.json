@@ -1,16 +1,12 @@
 {
-    "python.defaultInterpreterPath": "~/.asdf/installs/python/3.13.1/bin/python",
-    "[python]": {
-        "editor.codeActionsOnSave": {
-            "source.organizeImports": "always"
-        }
-    },
-    "isort.args": [
-        "--profile",
-        "black"
-    ],
-    "flake8.args": [
-        "--max-line-length=88"
-    ],
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
+  // TODO: Fix the default interpreter path.
+  "python.defaultInterpreterPath": "~/.asdf/installs/python/3.13.1/bin/python",
+  "[python]": {
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "always"
+    }
+  },
+  "isort.args": ["--profile", "black"],
+  "flake8.args": ["--max-line-length=88"],
+  "editor.defaultFormatter": "esbenp.prettier-vscode"
 }

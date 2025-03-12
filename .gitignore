@@ -10,3 +10,6 @@ node_modules
 
 # Ignore compiled javascript
 dist
+
+# Ignore the credentials file.
+event_hub_connection.json

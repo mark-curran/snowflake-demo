@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug TypeScript",
+      "type": "node",
+      "request": "launch",
+      "program": "dist/index.js",
+      //   "program": "${workspaceFolder}/load_via_kafka/dist/index.js",
+      "preLaunchTask": "Compile TypeScript",
+      //   "outFiles": ["${workspaceFolder}/load_via_kafka/dist/**/*.js"],
+      "sourceMaps": true
+    }
+  ]
+}
