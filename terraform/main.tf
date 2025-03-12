@@ -19,7 +19,7 @@ provider "azurerm" {
 }
 
 module "event_hub" {
-  source         = "../load_via_kafka/event_hubs/terraform"
+  source         = "../load_via_kafka/terraform"
   location       = var.az_subscription_default_location
   event_hub_name = "test-data"
 }
