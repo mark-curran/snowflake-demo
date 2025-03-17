@@ -14,6 +14,7 @@ const terraformOutputJson = fs.readFileSync(
 );
 
 export function getConnectionData(): ConnectionData {
+  logger.info('Retrieving connection data.');
   const parsedTerraformOutput: TerraformOutput = terraformOutputSchema.parse(
     JSON.parse(terraformOutputJson),
   );

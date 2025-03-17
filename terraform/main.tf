@@ -21,6 +21,6 @@ provider "azurerm" {
 module "event_hub" {
   source         = "../load_via_kafka/terraform"
   location       = var.az_subscription_default_location
-  event_hub_name = "test-data"
+  event_hub_name = "test.entity"
   auth_rule_name = "test-auth-rule"
 }
