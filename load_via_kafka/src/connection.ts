@@ -12,6 +12,12 @@ import {
   MessageValue,
   MessageKey,
   MessageHeader,
+  Client,
+  ReadyInfo,
+  KafkaClientEvents,
+  KafkaConsumer,
+  SubscribeTopicList,
+  ClientMetrics,
 } from 'node-rdkafka';
 
 // TODO: Find somewhere to put this
@@ -39,7 +45,7 @@ export type ConnectionData = {
 };
 
 export const SASL_USERNAME = '$ConnectionString';
-export const TOPIC = 'test-data';
+export const TOPIC = 'test.entity';
 
 export const globalConfig: GlobalConfig = {
   'metadata.broker.list': connectionData.broker,
@@ -51,7 +57,7 @@ export const globalConfig: GlobalConfig = {
 };
 export const consumerConfig: ConsumerGlobalConfig = {
   ...globalConfig,
-  'group.id': 'test-consumer-group',
+  'group.id': 'happy-consumer-group',
   'enable.auto.commit': false,
 };
 export const producerConfig: ProducerGlobalConfig = {
@@ -93,4 +99,45 @@ function getBrokerAddress(primaryConnectionString: string): string {
   const broker = primaryConnectionString.split('//')[1].split('/')[0] + ':9093';
 
   return broker;
+}
+
+export async function connectAndResolve(
+  client: Client<KafkaClientEvents>,
+): Promise<ReadyInfo> {
+  return new Promise((resolve) => {
+    client.on('ready', (readyInfo) => {
+      resolve(readyInfo);
+    });
+
+    client.connect();
+  });
+}
+
+export async function subscribeAndResolve(
+  consumer: KafkaConsumer,
+  topics: SubscribeTopicList,
+): Promise<SubscribeTopicList> {
+  return new Promise((resolve) => {
+    consumer.on('subscribed', (topics: SubscribeTopicList) => {
+      resolve(topics);
+    });
+
+    consumer.subscribe(topics);
+  });
+}
+
+export async function disconnectAndResolve(
+  client: Client<KafkaClientEvents>,
+): Promise<ClientMetrics> {
+  return new Promise((resolve) => {
+    client.on('disconnected', (clientMetrics) => {
+      resolve(clientMetrics);
+    });
+
+    client.disconnect();
+  });
+}
+
+export function isValidName(name: unknown): boolean {
+  return typeof name === 'string' && name.trim().length > 0;
 }

@@ -2,6 +2,7 @@ import { Producer } from 'node-rdkafka';
 import logger from './logger';
 import { busAck, decodeKey, ProducerInput } from './connection';
 
+// TODO: Rename to ProducerBatch.
 export class MessageBatch {
   private static activeProducers: Set<string> = new Set();
   private producer: Producer;
@@ -64,6 +65,7 @@ export class MessageBatch {
     this.sendingBatch = false;
   }
 
+  // TODO: Make this a helper function?
   private static addToActiveProducers(producerName: string) {
     if (MessageBatch.activeProducers.has(producerName)) {
       throw new Error(

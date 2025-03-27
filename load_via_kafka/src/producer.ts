@@ -39,7 +39,7 @@ export async function produceData(
     batchedInputs.set(batch, [...(batchedInputs.get(batch) ?? []), input]);
   });
 
-  // Send the batches
+  // Send the batches.
   await Promise.all(
     Array.from(batchedInputs, ([batch, input]): Promise<void> => {
       return batch.sendBatch(input);
@@ -102,6 +102,7 @@ function getConfiguredProducer(clientId?: string): Producer {
   return producer;
 }
 
+// TODO: Use the common function for this.
 async function connectAndResolve(producer: Producer): Promise<ReadyInfo> {
   return new Promise((resolve) => {
     producer.on('ready', (readyInfo) => {
