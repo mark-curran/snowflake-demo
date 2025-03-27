@@ -39,7 +39,7 @@ export async function consumeData() {
   consumer.on('data', (message) => {
     logger.debug(`Consumed message: ${JSON.stringify(message)}`);
   });
-  consumer.consume(1;
+  consumer.consume(1);
 
   logger.debug('Waiting main thread for five seconds.');
   await new Promise((resolve) => setTimeout(resolve, 5000));
