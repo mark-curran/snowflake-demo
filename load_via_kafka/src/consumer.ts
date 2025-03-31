@@ -1,16 +1,17 @@
-import { KafkaConsumer } from 'node-rdkafka';
+import { KafkaConsumer, Message } from 'node-rdkafka';
 import {
   connectAndResolve,
   consumerConfig,
   disconnectAndResolve,
   subscribeAndResolve,
   TOPIC,
+  seekAndResolve,
 } from './connection';
 import logger from './logger';
 import { ConsumerBatch } from './consumeBatch';
 
-export async function consumeData() {
-  const consumer = getConfiguredConsumer();
+export async function consumeBatch() {
+  const consumer = new KafkaConsumer(consumerConfig, {});
 
   const readyInfo = await connectAndResolve(consumer);
   logger.info(`Consumer is ready ${JSON.stringify(readyInfo)}`);
@@ -18,9 +19,38 @@ export async function consumeData() {
   const subscribeTopics = await subscribeAndResolve(consumer, [TOPIC]);
   logger.info(`Consumer is subscribed to ${JSON.stringify(subscribeTopics)}`);
 
-  logger.debug('Querying offests.');
-  const offsets = consumer.getWatermarkOffsets(TOPIC, 0);
-  logger.debug(`Offsets are: ${JSON.stringify(offsets)}`);
+  const initTopicPartitionOffset = { topic: TOPIC, partition: 0, offset: 0 };
+
+  const consumerBatch = new ConsumerBatch(
+    consumer,
+    initTopicPartitionOffset,
+    async (message: Message) => {
+      logger.debug(`Processing message: ${JSON.stringify(message)}`);
+    },
+    2,
+    2000,
+    500,
+  );
+
+  await consumerBatch.consumeInBatches(10);
+}
+
+export async function testConsumeData() {
+  const consumer = new KafkaConsumer(consumerConfig, {});
+
+  const readyInfo = await connectAndResolve(consumer);
+  logger.info(`Consumer is ready ${JSON.stringify(readyInfo)}`);
+
+  var subscription = consumer.subscription();
+  logger.info(
+    `Consumer is curently subscribed to ${JSON.stringify(subscription)}`,
+  );
+
+  const subscribeTopics = await subscribeAndResolve(consumer, [TOPIC]);
+  logger.info(`Consumer is subscribed to ${JSON.stringify(subscribeTopics)}`);
+
+  subscription = consumer.subscription();
+  logger.info(`Consumer is now subscribed to ${JSON.stringify(subscription)}`);
 
   logger.debug('Querying assignments');
   var assignments = consumer.assignments();
@@ -35,20 +65,11 @@ export async function consumeData() {
   assignments = consumer.assignments();
   logger.debug(`Assignments are now: ${JSON.stringify(assignments)}`);
 
-  logger.debug('Consuming one message');
+  logger.debug('Setting the consume event listener.');
   consumer.on('data', (message) => {
     logger.debug(`Consumed message: ${JSON.stringify(message)}`);
   });
-  consumer.consume(1);
-
-  logger.debug('Waiting main thread for five seconds.');
-  await new Promise((resolve) => setTimeout(resolve, 5000));
-
-  logger.debug('Querying assignments again');
-  assignments = consumer.assignments();
-  logger.debug(`Assignments are now: ${JSON.stringify(assignments)}`);
-
-  logger.debug('Atempting to commit the offset');
+  logger.debug('Setting the offset commit listener.');
   consumer.on('offset.commit', (error, topicPartitions) => {
     if (!error) {
       logger.debug(
@@ -61,45 +82,47 @@ export async function consumeData() {
       );
     }
   });
-  consumer.commitMessage(topicPartitionOffset);
+  logger.debug('Setting the partition EOF event.');
+  consumer.on('partition.eof', (eof) => {
+    logger.debug(`Partition EOF event: ${JSON.stringify(eof)}`);
+  });
+  logger.debug('Setting the rebalance event.');
+  consumer.on('rebalance', (err, assignments) => {
+    logger.debug(`Rebalance event: ${JSON.stringify(assignments)}`);
+  });
 
-  logger.debug('Waiting main thread for another five seconds.');
-  await new Promise((resolve) => setTimeout(resolve, 5000));
+  /*
+  NOTE: Consuming kafka from Event Hubs doesn't seem to be possible because Event Hub doesn't
+  have a notion of consumer groups, assignments of Kafka offsets.
+  
+  This sample returns the same messages more than once and updates the topics when a partition
+  is exhausted, all the while failing to trigger a 'rebalance' or 'partition.eof' event.
 
-  logger.debug('Querying assignments again');
-  assignments = consumer.assignments();
-  logger.debug(`Assignments are now: ${JSON.stringify(assignments)}`);
+  Solution is to use the seek() command to manually move the read cursor after every 
+  call to consume.  
+  */
+  for (var j = 0; j < 5; j++) {
+    console.log();
+    logger.debug('Consuming five messages');
+    consumer.consume(5);
 
-  logger.debug('Trying to get data about commits.');
-  consumer.committed(
-    [{ topic: TOPIC, partition: 0 }],
-    1000,
-    (err, returnedValue) => {
-      logger.debug(
-        `Error: ${err} TopicPartitionOffsets ${JSON.stringify(returnedValue)}`,
-      );
-    },
-  );
+    logger.debug('Waiting main thread for 0 second.');
+    await new Promise((resolve) => setTimeout(resolve, 10));
 
-  logger.debug('Waiting main thread for another two seconds.');
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+    logger.debug('Querying assignments again');
+    assignments = consumer.assignments();
+    logger.debug(`Assignments are now: ${JSON.stringify(assignments)}`);
+
+    logger.debug('Waiting main thread again for second.');
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    logger.debug(`Awaiting a seek to ${JSON.stringify(topicPartitionOffset)}`);
+    await seekAndResolve(consumer, topicPartitionOffset);
+  }
 
   logger.debug('Disconnecting the consumer.');
   const clientMetrics = await disconnectAndResolve(consumer);
   logger.debug(`Disconnection info ${JSON.stringify(clientMetrics)}`);
 
   return;
-}
-
-function getConfiguredConsumer(): KafkaConsumer {
-  const consumer = new KafkaConsumer(consumerConfig, {
-    'auto.offset.reset': 'earliest',
-  });
-
-  consumer.on('event.log', (eventData) =>
-    logger.debug(`Consumer log: ${JSON.stringify(eventData)}`),
-  );
-  consumer.on('event.error', (err) => logger.error(`Consumer error: ${err}`));
-
-  return consumer;
 }

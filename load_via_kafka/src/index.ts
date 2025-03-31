@@ -1,17 +1,15 @@
 import logger from './logger';
-import { consumeData } from './consumer';
+import { testConsumeData, consumeBatch } from './consumer';
 import { produceData } from './producer';
 
 async function main() {
   logger.info('Starting Kafka publishing demo.');
 
-  const numMessages = 10;
-  const numProducers = 1;
-  const maxBatchSize = 15;
+  // await produceData(10, 1, 15);
 
-  // await produceData(numMessages, numProducers, maxBatchSize);
+  // await testConsumeData();
 
-  await consumeData();
+  await consumeBatch();
 
   logger.info('End of main function.');
   process.exit();

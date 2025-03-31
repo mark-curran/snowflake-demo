@@ -65,7 +65,6 @@ export class MessageBatch {
     this.sendingBatch = false;
   }
 
-  // TODO: Make this a helper function?
   private static addToActiveProducers(producerName: string) {
     if (MessageBatch.activeProducers.has(producerName)) {
       throw new Error(
@@ -76,6 +75,7 @@ export class MessageBatch {
     }
   }
 
+  // TODO: Make this a helper function?
   private static validProducerName(producerName: unknown): boolean {
     return typeof producerName === 'string' && producerName.trim().length > 0;
   }
@@ -88,9 +88,6 @@ export class MessageBatch {
           `Delivery report contents: ${JSON.stringify(report)} } ` +
           `Delivery repot key: ${decodeKey(report.key)}`,
       );
-      // logger.debug(`Delivery report error: ${JSON.stringify(err)}`);
-      // logger.debug(`Delivery report contents: ${JSON.stringify(report)} }`);
-      // logger.debug(`Delivery repot key: ${decodeKey(report.key)}`);
 
       this._busAcks.push({ err, report });
     });
@@ -126,10 +123,7 @@ export class MessageBatch {
     }
 
     /*
-    TODO: 
-    * Add transaction scoping.
-    * Add option for whether to rollback if one of the messages in the batch
-    produces an error.
+    NOTE: This project integrates with EventsHub which doesn't support transaction scoped writes.
     */
     logger.debug(`Producing batch of length ${inputLength}`);
     producerInput.forEach((input) => {

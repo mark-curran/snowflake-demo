@@ -1,31 +1,29 @@
 import {
-  ConsumerGlobalConfig,
   KafkaConsumer,
   KafkaConsumerEvents,
   Message,
   TopicPartitionOffset,
 } from 'node-rdkafka';
-import { isValidName } from './connection';
 import logger from './logger';
+import { AsyncQueue } from './exclusiveQueue';
 
 export class ConsumerBatch {
-  private static activeConsumers = new Map<string, Set<string>>();
+  private static activeClients = new Set<KafkaConsumer>();
   private consumer: KafkaConsumer;
-  private consumerGroup: string;
-  private consumerName: string;
   private consumptionCallback: (message: Message) => Promise<void>;
-  private errorCallback: (message: Message) => Promise<void>;
-  private messageBuffer: Message[];
-  private batchSize: number;
+  private messageBuffer: AsyncQueue<Message>;
+  private batchSize: number; // NOTE: This is per topic-partition.
   private batchTimeout: number;
-  private consumingBatch: boolean;
+  private clientPollInterval: number;
+  private topicPartitionOffsets: TopicPartitionOffset;
 
   constructor(
     consumer: KafkaConsumer,
+    initTopicPartitionOffsets: TopicPartitionOffset,
     consumptionCallback: (message: Message) => Promise<void>,
-    errorCallback: (message: Message) => Promise<void>,
     batchSize = 1,
     batchTimeout = 5000,
+    clientPollInterval = 20,
     allowExistingDataListeners = false,
   ) {
     // Check the consumer is connected
@@ -35,154 +33,180 @@ export class ConsumerBatch {
       );
     }
 
-    // Check the consumer has a global config.
-    var globalConfig: ConsumerGlobalConfig;
-    if ('globalConfig' in consumer) {
-      globalConfig = consumer.globalConfig as ConsumerGlobalConfig;
+    // Check the consumer isn't already in the active set.
+    if (ConsumerBatch.activeClients.has(consumer)) {
+      throw new Error(`There is already a consumer batch with this consumer`);
     } else {
-      throw new Error('KafkaConsumer is missing a globalConfig attribute.');
-    }
-
-    // If the consumer group is not an empty string, then assign it to an attribute.
-    var consumerGroup = globalConfig['group.id'];
-    if (isValidName(globalConfig['group.id'])) {
-      this.consumerGroup = consumerGroup as string;
-    } else {
-      throw new Error(
-        `Consumer group named ${consumerGroup} is not a valid consumer group.`,
-      );
-    }
-
-    // Check the consumer has a valid name.
-    var name: string;
-    if ('name' in consumer) {
-      name = consumer.name as string;
-    } else {
-      throw new Error(
-        `KafkaConsumer in group ${consumerGroup} does not have a 'name' attribute.`,
-      );
-    }
-
-    // If the name is not an empty string, then assign it to an attribute.
-    if (isValidName(name)) {
-      this.consumerName = name as string;
-    } else {
-      throw new Error(
-        `KafkaConsumer in group ${consumerGroup} does not have a valid name.`,
-      );
-    }
-
-    // Now that we know the consumer group and name are valid, add it to the set of
-    // active consumers.
-    try {
-      ConsumerBatch.addToActiveConsumers(this.consumerGroup, this.consumerName);
+      ConsumerBatch.activeClients.add(consumer);
       this.consumer = consumer;
-    } catch (err) {
-      throw new Error(
-        `Error encountered while adding consumer to ConsumerBatch ${err}`,
-      );
+      this.consumer.assign([initTopicPartitionOffsets]);
     }
 
     // Check there are no active listeners to the 'data' event for this consumer.
     // TODO: Does `data` belong to an node-rdkafka enum?
-    const existingListeners = consumer.listenerCount('data');
+    const existingListeners = consumer.listenerCount(
+      'data' as KafkaConsumerEvents,
+    );
     if (existingListeners > 0 && allowExistingDataListeners) {
       throw new Error(`Consumer with name `);
     } else {
       this.setDataListener();
     }
 
-    // Check we're only getting data from one topic.
-    const subscriptions = consumer.subscription();
-    if (subscriptions.length !== 1) {
+    // Check you are subscribed to the topic.
+    const clientSubscriptions = consumer.subscription();
+    if (!clientSubscriptions.includes(initTopicPartitionOffsets.topic)) {
       throw new Error(
-        `ConsumerBatch can only be subscribed to one topic. Kafka client subscribed to ${subscriptions} topics`,
+        `KafkaConsumer is not subscribed to ${initTopicPartitionOffsets.topic}`,
       );
     }
-
     // Set remaining attributes.
+    this.topicPartitionOffsets = initTopicPartitionOffsets;
     this.consumptionCallback = consumptionCallback;
-    this.errorCallback = errorCallback;
-    this.messageBuffer = [];
+    this.messageBuffer = new AsyncQueue<Message>();
     this.batchTimeout = batchTimeout;
+    this.clientPollInterval = clientPollInterval;
     this.batchSize = batchSize;
-    this.consumingBatch = false;
   }
 
-  private setDataListener(): void {
-    this.consumer.on('data', (message) => {
-      logger.debug(`Data received ${JSON.stringify(message)}`);
-      this.messageBuffer.push(message);
+  private setDataListener() {
+    this.consumer.on(
+      'data' as KafkaConsumerEvents,
+      async (message: Message) => {
+        logger.debug(
+          `Data received by rdkafka client: ${JSON.stringify(message)}`,
+        );
+        await this.messageBuffer.push(message);
+      },
+    );
+  }
+
+  private async seekAndResolve(
+    topicPartitionOffset: TopicPartitionOffset,
+  ): Promise<void> {
+    /* NOTE: The `topicPartitionOffset` argument is an object, so nodejs will pass a
+    reference, not a deep copy of it's values. So that this promise resolves to a unique
+    value, create a function scoped copy.
+
+    If we were interested in creating a full blown Kafka client, we'd wrap kafka seek
+    behaviour in a mutex to prevent multiple async seek commands being run in a parallel.
+    */
+    const localTopicPartitionOffset = structuredClone(topicPartitionOffset);
+    new Promise((resolve) => {
+      this.consumer.seek(localTopicPartitionOffset, null, (err) => {
+        logger.debug(
+          `Finished seeking to ${JSON.stringify(localTopicPartitionOffset)}.`,
+        );
+        resolve;
+      });
     });
   }
 
-  private constructCommitPayload(): TopicPartitionOffset {
-    return { topic: 'hi', partition: 0, offset: 0 };
-  }
+  private async consumeTopicPartitionOffset(): Promise<number> {
+    // TODO: Cannot be invoked while consuming another batch.
+    const startBufferLength = await this.messageBuffer.getLength();
 
-  private static addToActiveConsumers(
-    consumerGroup: string,
-    consumerName: string,
-  ) {
-    if (ConsumerBatch.activeConsumers.has(consumerGroup)) {
-      const consumersSameGroup = ConsumerBatch.activeConsumers.get(
-        consumerGroup,
-      ) as Set<string>;
-      if (consumersSameGroup.has(consumerName)) {
-        throw new Error(
-          `There already exists a ConsumerBatch in group ${consumerGroup} with consumer named ${consumerName}.`,
+    /*
+    NOTE: In Event Hub it seems that after a seek the next consume will only consume
+    messages from that topic.
+
+    In native Kafka the broker should determine the balance of messages the consumer
+    gets from each partition.
+    */
+    // Seek to start position for this batch.
+    await this.seekAndResolve(this.topicPartitionOffsets);
+
+    // Ask the client to consume more messages without exceeding batch size.
+    /* 
+    NOTE: Unclear from documentation, but .consume probably asynchronous based on bespoke 
+    testing.
+    */
+    this.consumer.consume(this.batchSize - startBufferLength);
+
+    // Process as many messages as possible within the batch timeout.
+    const timeStartBatch = Date.now();
+    var messagesProcessed: Message[] = [];
+
+    for (;;) {
+      logger.debug('Entering message processing loop.');
+      var timeStartLoop = Date.now();
+
+      // Break the loop if the batch has exceeded the timeout.
+      if (timeStartLoop > timeStartBatch + this.batchTimeout) {
+        logger.debug('Timeout for batch exceeded.');
+        break;
+      }
+
+      // Break the loop if you've already processed enough messages.
+      if (messagesProcessed.length >= this.batchSize) {
+        logger.debug(`Already processed ${this.batchSize} messages`);
+        break;
+      }
+
+      var currentBufferLength = await this.messageBuffer.getLength();
+      if (currentBufferLength === 0) {
+        // Wait some time for the buffer to fill up.
+        await new Promise((resolve) =>
+          setTimeout(resolve, this.clientPollInterval),
         );
       } else {
-        // NOTE: A Set<string> is a refernce type so we shouldn't need to update the Map object.
-        consumersSameGroup.add(consumerName);
+        // If there's something on the buffer, then process it up to the
+        // maximum batch size.
+        const messagesFromBuffer = await this.messageBuffer.splice(
+          0,
+          this.batchSize,
+        );
+
+        logger.debug(`Spliced ${messagesFromBuffer.length} from the buffer.`);
+        await Promise.all(
+          messagesFromBuffer.map((message) => {
+            this.consumptionCallback(message);
+          }),
+        );
+        messagesProcessed.push(...messagesFromBuffer);
       }
-    } else {
-      ConsumerBatch.activeConsumers.set(consumerGroup, new Set([consumerName]));
+    }
+
+    logger.debug('Updating partition and offset.');
+    this.updateParitionOffset(messagesProcessed);
+
+    return messagesProcessed.length;
+  }
+
+  private updateParitionOffset(messagesProcessed: Message[]) {
+    if (messagesProcessed.length > 0) {
+      const largestOffset = Math.max(
+        ...messagesProcessed.map((message) => {
+          return message.offset;
+        }),
+      );
+      this.topicPartitionOffsets.offset = largestOffset + 1;
     }
   }
 
-  public async consumeBatch(): Promise<void> {
-    // TODO: Not callable if already consuming a batch.
-    // TODO: Warning if your batch size exceeds "consume.callback.max.messages"
+  public async consumeInBatches(
+    number?: number,
+    backOffCallback = new Promise((resolve) => {
+      setTimeout(resolve, 1000);
+    }),
+  ) {
+    var messagesProcessed = 0;
 
-    // This method shouldn't return until all `data` callbacks are run.
-    logger.debug(`Calling client to process batch of size ${this.batchSize}`);
-    this.consumer.consume(this.batchSize);
+    for (;;) {
+      const processedOneBatch = await this.consumeTopicPartitionOffset();
+      messagesProcessed += processedOneBatch;
 
-    logger.debug(`Processing batch of size ${this.messageBuffer.length}`);
-    const callbackResults: PromiseSettledResult<void>[] =
-      // TODO: Race against a timeout.
-      await Promise.allSettled(
-        this.messageBuffer.map((message) => {
-          this.consumptionCallback(message);
-        }),
-      );
-
-    logger.debug(`Filtering callback results.`);
-    const messageResultMap = new Map<Message, PromiseSettledResult<void>>();
-    this.messageBuffer.forEach((message, j) =>
-      messageResultMap.set(message, callbackResults[j]),
-    );
-    const rejectedMessages: Message[] = [];
-    messageResultMap.forEach((result, message) => {
-      if (result.status === 'fulfilled') {
-        rejectedMessages.push(message);
-      }
-    });
-
-    if (rejectedMessages.length > 0) {
-      logger.debug(`Calling the error callback function.`);
-      try {
-        await Promise.all(
-          rejectedMessages.map((message) => this.errorCallback(message)),
-        );
-        // TODO: Race against a timeout.
-      } catch {
-        // TODO: Make a throw versus warn something configurable.
-        logger.error('Error processing rejected messages.');
+      if (number) {
+        if (messagesProcessed >= number) {
+          logger.debug(
+            `Processed ${messagesProcessed} messages, breaking from the loop.`,
+          );
+          break;
+        }
       }
     }
 
-    // TODO: Commit the offset.
+    logger.debug('Calling back off callback.');
+    await backOffCallback;
   }
 }

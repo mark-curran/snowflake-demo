@@ -1,4 +1,7 @@
-// TODO: Zod library for type checking.
+/**
+ * @module: connection
+ * @description: Types and helper functions for connecting to Event Hubs.
+ */
 import * as fs from 'fs';
 import logger from './logger';
 import { z } from 'zod';
@@ -18,9 +21,9 @@ import {
   KafkaConsumer,
   SubscribeTopicList,
   ClientMetrics,
+  TopicPartitionOffset,
 } from 'node-rdkafka';
 
-// TODO: Find somewhere to put this
 export type busAck = {
   err: LibrdKafkaError;
   report: DeliveryReport;
@@ -140,4 +143,18 @@ export async function disconnectAndResolve(
 
 export function isValidName(name: unknown): boolean {
   return typeof name === 'string' && name.trim().length > 0;
+}
+
+export async function seekAndResolve(
+  consumer: KafkaConsumer,
+  topicPartitionOffset: TopicPartitionOffset,
+): Promise<void> {
+  new Promise((resolve) => {
+    consumer.seek(topicPartitionOffset, null, (err) => {
+      if (!err) {
+        logger.debug('Seek callback no error');
+      }
+      resolve;
+    });
+  });
 }
