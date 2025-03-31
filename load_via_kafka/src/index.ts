@@ -5,9 +5,9 @@ import { produceData } from './producer';
 async function main() {
   logger.info('Starting Kafka publishing demo.');
 
-  // await produceData(10, 1, 15);
+  await produceData(10, 1, 15);
 
-  // await testConsumeData();
+  await testConsumeData();
 
   await consumeBatch();
 

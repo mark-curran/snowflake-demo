@@ -3,7 +3,7 @@ import logger from './logger';
 import { busAck, decodeKey, ProducerInput } from './connection';
 
 // TODO: Rename to ProducerBatch.
-export class MessageBatch {
+export class ProducerBatch {
   private static activeProducers: Set<string> = new Set();
   private producer: Producer;
   private sendingBatch: boolean;
@@ -22,7 +22,7 @@ export class MessageBatch {
   ) {
     // Check producer is connected.
     if (!producer.isConnected()) {
-      throw new Error('Producer must be connected to use MessageBatch class.');
+      throw new Error('Producer must be connected to use ProducerBatch class.');
     }
 
     // Check the producer has a `name` attribute, which is not included in type definition.
@@ -33,12 +33,12 @@ export class MessageBatch {
     }
 
     // Check the name is not an empty string or undefined.
-    if (MessageBatch.validProducerName(nameAttribute)) {
+    if (ProducerBatch.validProducerName(nameAttribute)) {
       // Cast as a string now that we know it's a valid name.
       const producerName = nameAttribute as string;
 
       logger.debug(`Adding producer named ${producerName} to a message batch.`);
-      MessageBatch.addToActiveProducers(producerName);
+      ProducerBatch.addToActiveProducers(producerName);
       this.producerName = producerName;
       this.producer = producer;
     } else {
@@ -55,7 +55,7 @@ export class MessageBatch {
       );
     } else this.setDeliveryReportListener();
 
-    // When you construct MessageBatch you haven't received any acks yet.
+    // When you construct ProducerBatch you haven't received any acks yet.
     this._busAcks = [];
 
     // Set remaining attributes.
@@ -66,12 +66,12 @@ export class MessageBatch {
   }
 
   private static addToActiveProducers(producerName: string) {
-    if (MessageBatch.activeProducers.has(producerName)) {
+    if (ProducerBatch.activeProducers.has(producerName)) {
       throw new Error(
-        `There already exists a MessageBatch with producer named ${producerName}`,
+        `There already exists a ProducerBatch with producer named ${producerName}`,
       );
     } else {
-      MessageBatch.activeProducers.add(producerName);
+      ProducerBatch.activeProducers.add(producerName);
     }
   }
 

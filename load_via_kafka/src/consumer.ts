@@ -8,7 +8,7 @@ import {
   seekAndResolve,
 } from './connection';
 import logger from './logger';
-import { ConsumerBatch } from './consumeBatch';
+import { ConsumerBatch } from './consumerBatch';
 
 export async function consumeBatch() {
   const consumer = new KafkaConsumer(consumerConfig, {});
@@ -21,18 +21,22 @@ export async function consumeBatch() {
 
   const initTopicPartitionOffset = { topic: TOPIC, partition: 0, offset: 0 };
 
+  const batchSize = 2;
+  const totalMessages = 10;
+
   const consumerBatch = new ConsumerBatch(
     consumer,
     initTopicPartitionOffset,
     async (message: Message) => {
       logger.debug(`Processing message: ${JSON.stringify(message)}`);
     },
-    2,
+    batchSize,
     2000,
     500,
   );
 
-  await consumerBatch.consumeInBatches(10);
+  logger.info(`Consuming batches until we process ${totalMessages} messages.`);
+  await consumerBatch.consumeInBatches(totalMessages);
 }
 
 export async function testConsumeData() {

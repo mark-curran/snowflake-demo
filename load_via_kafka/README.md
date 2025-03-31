@@ -10,7 +10,7 @@ Setup all the infrastructure from the root terraform directory
 terraform apply
 ```
 
-Get the primary connection string.
+Get the primary connection string and save it in a local file that is not version controlled.
 
 ```shell
 source get_primary_connection_string.sh
@@ -32,4 +32,4 @@ npm install
 
 ## Sources
 
-Based partially on the [official event hubs nodejs quickstart guide](https://github.com/Azure/azure-event-hubs-for-kafka/tree/master/quickstart/node).
+Based very partially on the [official event hubs nodejs quickstart guide](https://github.com/Azure/azure-event-hubs-for-kafka/tree/master/quickstart/node), but largely built from the ground up by the repository author.

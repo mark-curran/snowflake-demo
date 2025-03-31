@@ -2,7 +2,7 @@
 import { producerConfig, ProducerInput, TOPIC } from './connection';
 import { Producer, ReadyInfo } from 'node-rdkafka';
 import logger from './logger';
-import { MessageBatch } from './messageBatch';
+import { ProducerBatch } from './producerBatch';
 
 export async function produceData(
   numMessages: number,
@@ -29,11 +29,11 @@ export async function produceData(
 
   // Get some batches to manage sending those messages.
   const batches = producers.map((producer) => {
-    return new MessageBatch(producer, maxBatchSize);
+    return new ProducerBatch(producer, maxBatchSize);
   });
 
   // Split the input messages into batches.
-  const batchedInputs = new Map<MessageBatch, ProducerInput[]>();
+  const batchedInputs = new Map<ProducerBatch, ProducerInput[]>();
   inputs.forEach((input, j) => {
     const batch = batches[j % producers.length];
     batchedInputs.set(batch, [...(batchedInputs.get(batch) ?? []), input]);
