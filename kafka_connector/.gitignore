@@ -1,0 +1,3 @@
+# Temporary place to store large binariese during development. Otherwise you need to
+# downlaod the binaries everytime you try to build the docker image.
+tmp
