@@ -1,5 +1,5 @@
 
-FROM eclipse-temurin:24 AS os_builder
+FROM eclipse-temurin:24 AS os_only
 
 # Variables for setting up Kafka.
 ARG KAFKA_VERSION=2.8.1
@@ -16,12 +16,13 @@ RUN groupadd -r $USER_AND_GROUP_NAME && useradd -r -g $USER_AND_GROUP_NAME $USER
 # # Install OS dependencies
 RUN apt-get update
 RUN \
-    apt-get install -y \
-    gzip \
-    tar \
-    gettext-base
+apt-get install -y \
+gzip \
+tar \
+gettext-base \
+jq
 
-FROM os_builder AS kafka_builder
+FROM os_only AS kafka_builder
 
 # Download and extract Kafka.
 # TODO: Replace the COPY comamand with a `wget` command.
@@ -30,9 +31,9 @@ COPY tmp/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz /tmp/kafka_${SCALA_VERSION}
 
 # Unzip the installation and move it to the installation directory
 RUN \
-    tar -xvzf /tmp/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz -C /opt && \
-    rm /tmp/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz && \
-    mv /opt/kafka_$SCALA_VERSION-$KAFKA_VERSION $KAFKA_HOME
+tar -xvzf /tmp/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz -C /opt && \
+rm /tmp/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz && \
+mv /opt/kafka_$SCALA_VERSION-$KAFKA_VERSION $KAFKA_HOME
 
 # Install additional libraries.
 # TODO: Replace the COPY comamand with a `wget` command.

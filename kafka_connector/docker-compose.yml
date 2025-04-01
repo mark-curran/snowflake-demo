@@ -1,0 +1,19 @@
+volumes:
+  shared-properties:
+
+secrets:
+  event_hub_credentials:
+    file: ../event_hub_connection.json
+
+services:
+  init-properties-files:
+    image: connector:os-only
+    build:
+      target: os_only
+    volumes:
+      - ./properties:/tmp/shared-properties
+      - ./init-properties-files.sh:/init-property-files/init-properties-files.sh
+      - shared-properties:/shared-properties
+    secrets:
+      - event_hub_credentials
+    command: ' sh init-property-files/init-properties-files.sh'
