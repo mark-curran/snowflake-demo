@@ -1,9 +1,9 @@
 
-FROM eclipse-temurin:24 AS os_only
+FROM eclipse-temurin:17 AS os_only
 
 # Variables for setting up Kafka.
 ARG KAFKA_VERSION=2.8.1
-ARG SCALA_VERSION=2.12
+ARG SCALA_VERSION=2.13
 ARG KAFKA_HOME=/opt/kafka
 ARG USER_AND_GROUP_NAME=kafka
 
@@ -22,7 +22,7 @@ tar \
 gettext-base \
 jq
 
-FROM os_only AS kafka_builder
+FROM os_only AS snowflake_connector
 
 # Download and extract Kafka.
 # TODO: Replace the COPY comamand with a `wget` command.
