@@ -1,0 +1,7 @@
+{
+  "database_name": "demo_database",
+  "streaming_schema": "streaming_schema",
+  "streaming_user": "streaming_user",
+  "streaming_user_role": "streaming_user_role",
+  "streaming_warehouse": "streaming_warehouse"
+}

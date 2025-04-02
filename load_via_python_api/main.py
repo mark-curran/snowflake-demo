@@ -1,5 +1,6 @@
 import csv
 import json
+from dataclasses import dataclass
 from io import BytesIO, StringIO
 from typing import TypedDict
 from uuid import uuid4
@@ -8,10 +9,20 @@ from logger import logger
 from snowflake.connector import SnowflakeConnection, connect
 
 
+# TODO: Make a dataclass.
 class Person(TypedDict):
     id: int
     name: str
     age: int
+
+
+@dataclass
+class SnowflakeStreamingAttributes:
+    database_name: str
+    streaming_schema: str
+    streaming_user: str
+    streaming_user_role: str
+    streaming_warehouse: str
 
 
 def main():
@@ -29,6 +40,57 @@ def get_snowflake_connection() -> SnowflakeConnection:
     connection = connect(**config)
 
     return connection
+
+
+def get_snowflake_attributes() -> SnowflakeStreamingAttributes:
+
+    with open("snowflake_streaming_attributes.json", "r") as file:
+        config = json.load(file)
+
+    return SnowflakeStreamingAttributes(**config)
+
+
+def create_schema_and_database():
+    # Create the streaming database, schema and warehouse.
+
+    connection = get_snowflake_connection()
+    snowflake_streaming_attributes = get_snowflake_attributes()
+
+    # TODO: Transaction scoping.
+    cursor = connection.cursor()
+    cursor.execute(
+        "CREATE DATABASE IF NOT EXISTS "
+        + f"IDENTIFIER('{snowflake_streaming_attributes.database_name}')"
+    )
+
+    cursor.execute(
+        (
+            "CREATE OR REPLACE WAREHOUSE "
+            + f"IDENTIFIER('{snowflake_streaming_attributes.streaming_warehouse}')"
+            + " WITH WAREHOUSE_SIZE = 'SMALL'"
+        )
+    )
+    cursor.execute(
+        "CREATE OR REPLACE ROLE "
+        + f"IDENTIFIER('{snowflake_streaming_attributes.streaming_user_role}')"
+    )
+    cursor.execute(
+        "GRANT USAGE ON WAREHOUSE "
+        + f"IDENTIFIER('{snowflake_streaming_attributes.streaming_warehouse}')"
+        + f"TO ROLE IDENTIFIER('{snowflake_streaming_attributes.streaming_user_role}')"
+    )
+
+    # For simplicity run the streaming service as the current user.
+    cursor.execute(
+        f"GRANT ROLE IDENTIFIER('{snowflake_streaming_attributes.streaming_user_role}')"
+        + f"TO USER IDENTIFIER('{connection.user}')"
+    )
+
+    cursor.execute(f"USE IDENTIFIER('{snowflake_streaming_attributes.database_name}');")
+    cursor.execute(
+        "CREATE OR REPLACE SCHEMA "
+        + f"IDENTIFIER('{snowflake_streaming_attributes.streaming_schema}');"
+    )
 
 
 def load_sample_data():
@@ -99,4 +161,4 @@ def load_sample_data():
 
 
 if __name__ == "__main__":
-    main()
+    create_schema_and_database()
