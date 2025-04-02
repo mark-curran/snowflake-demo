@@ -8,6 +8,8 @@ PROPERTIES_FILES_TEMPLATE="/tmp/shared-properties/template-connect-standalone.pr
 PROPERTIES_FILE="/shared-properties/connect-standalone.properties"
 ADMIN_PROPERTIES_TEMPLATE="/tmp/shared-properties/template-admin-client.properties"
 ADMIN_PROPERTIES_FILE="/shared-properties/admin-client.properties"
+SNOWFLAKE_CONNECTOR_PROPERTIES_TEMPLATE="/tmp/shared-properties/template-snowflake-event-hub-connector.properties"
+SNOWFLAKE_CONNECTOR_PROPERTIES_FILE="/shared-properties/snowflake-event-hub-connector.properties"
 
 PRIMARY_CONNECTION_STRING=$(jq -r '.primary_connection_string' "$SECRET_PATH")
 BOOTSTRAP_SERVER=$(jq -r '.bootstrap_server' "$SECRET_PATH")
@@ -33,4 +35,12 @@ CLUSTER_URL=$account_id.snowflakecomputing.com
 SNOWFLAKE_USER=$(jq -r '.user' "$CONNECTION_CONFIG_PATH")
 PRIVATE_KEY_VALUE=$(cat $PRIVATE_KEY_PATH | grep -v PRIVATE | tr -d '\n')
 
-echo 'Secrets injected into properties file.'
+# TODO: Continue injecting the table, database and user information.
+
+env CLUSTER_URL="$CLUSTER_URL" \
+env SNOWFLAKE_USER="$SNOWFLAKE_USER" \
+env PRIVATE_KEY_VALUE="$PRIVATE_KEY_VALUE" \
+envsubst < $SNOWFLAKE_CONNECTOR_PROPERTIES_TEMPLATE \
+> "$SNOWFLAKE_CONNECTOR_PROPERTIES_FILE"
+
+echo 'Secrets injected into properties files.'

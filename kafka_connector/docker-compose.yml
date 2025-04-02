@@ -22,24 +22,27 @@ services:
       - event_hub_credentials
       - connection_config
       - private_key
-    # command: ' sh init-property-files/init-properties-files.sh'
-    command: 'tail -f > /dev/null'
+    command: ' sh init-property-files/init-properties-files.sh'
+    # command: 'tail -f > /dev/null'
 
-  # snowflake-connector:
-  #   depends_on:
-  #     init-properties-files:
-  #       condition: service_completed_successfully
-  #   image: connector:snowflake_connector
-  #   build:
-  #     target: snowflake_connector
-  #   volumes:
-  #     - shared-properties:/shared-properties
-  #     # - ./tmp/admin-client.properties:/opt/kafka/config/admin-client.properties
-  #   command:
-  #     - sh
-  #     - -c
-  #     - |
-  #       cp /shared-properties/*.properties /opt/kafka/config/ &&
-  #       tail -f > /dev/null
-  # TODO: Append a command to start kafka, don't just idle the container.
-# Test with this command: bin/kafka-topics.sh --bootstrap-server natural-prawn.servicebus.windows.net:9093 --command-config config/admin-client.properties --list
+  snowflake-connector:
+    depends_on:
+      init-properties-files:
+        condition: service_completed_successfully
+    image: connector:snowflake_connector
+    build:
+      target: snowflake_connector
+    volumes:
+      - shared-properties:/shared-properties
+      # - ./tmp/admin-client.properties:/opt/kafka/config/admin-client.properties
+    command:
+      - sh
+      - -c
+      - |
+        cp /shared-properties/*.properties /opt/kafka/config/ &&
+        tail -f > /dev/null
+
+# TODO: Append a command to start kafka, don't just idle the container.
+# Test with these commands:
+# bin/kafka-topics.sh --bootstrap-server natural-prawn.servicebus.windows.net:9093 --command-config config/admin-client.properties --list
+# bin/connect-standalone.sh config/connect-standalone.properties config/snowflake-event-hub-connector.properties
