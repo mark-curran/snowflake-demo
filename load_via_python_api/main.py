@@ -52,7 +52,6 @@ def get_snowflake_attributes() -> SnowflakeStreamingAttributes:
 
 def create_schema_and_database():
     # Create the streaming database, schema and warehouse.
-
     connection = get_snowflake_connection()
     snowflake_streaming_attributes = get_snowflake_attributes()
 
@@ -85,7 +84,6 @@ def create_schema_and_database():
         f"GRANT ROLE IDENTIFIER('{snowflake_streaming_attributes.streaming_user_role}')"
         + f"TO USER IDENTIFIER('{connection.user}')"
     )
-
     cursor.execute(f"USE IDENTIFIER('{snowflake_streaming_attributes.database_name}');")
     cursor.execute(
         "CREATE OR REPLACE SCHEMA "
