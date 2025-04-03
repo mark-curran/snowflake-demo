@@ -7,9 +7,9 @@ async function main() {
 
   await produceData(10, 1, 15);
 
-  await testConsumeData();
+  // await testConsumeData();
 
-  await consumeBatch();
+  // await consumeBatch();
 
   logger.info('End of main function.');
   process.exit();

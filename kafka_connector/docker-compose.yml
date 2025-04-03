@@ -42,7 +42,9 @@ services:
       - -c
       - |
         cp /shared-properties/*.properties /opt/kafka/config/ &&
-        tail -f > /dev/null
+        bin/connect-standalone.sh \
+        config/connect-standalone.properties \
+        config/snowflake-event-hub-connector.properties
 
 # TODO: Append a command to start kafka, don't just idle the container.
 # Test with these commands:
