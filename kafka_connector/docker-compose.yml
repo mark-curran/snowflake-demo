@@ -18,6 +18,8 @@ services:
       - ./properties:/tmp/shared-properties
       - ./init-properties-files.sh:/init-property-files/init-properties-files.sh
       - shared-properties:/shared-properties
+      # NOTE: This is not sensitive.
+      - ../snowflake_streaming_attributes.json:/tmp/snowflake-streaming-attributes.json
     secrets:
       - event_hub_credentials
       - connection_config

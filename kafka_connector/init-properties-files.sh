@@ -3,6 +3,7 @@
 SECRET_PATH="/run/secrets/event_hub_credentials"
 CONNECTION_CONFIG_PATH="/run/secrets/connection_config"
 PRIVATE_KEY_PATH="/run/secrets/private_key"
+STREAMING_CONFIG_PATH="/tmp/snowflake-streaming-attributes.json"
 
 PROPERTIES_FILES_TEMPLATE="/tmp/shared-properties/template-connect-standalone.properties"
 PROPERTIES_FILE="/shared-properties/connect-standalone.properties"
@@ -35,11 +36,19 @@ CLUSTER_URL=$account_id.snowflakecomputing.com
 SNOWFLAKE_USER=$(jq -r '.user' "$CONNECTION_CONFIG_PATH")
 PRIVATE_KEY_VALUE=$(cat $PRIVATE_KEY_PATH | grep -v PRIVATE | tr -d '\n')
 
+
+SNOWFLAKE_DB=$(jq -r '.database_name' "$STREAMING_CONFIG_PATH")
+SNOWFLAKE_SCHEMA=$(jq -r '.streaming_schema' "$STREAMING_CONFIG_PATH")
+STREAMING_ROLE=$(jq -r '.streaming_user_role' "$STREAMING_CONFIG_PATH")
+
 # TODO: Continue injecting the table, database and user information.
 
 env CLUSTER_URL="$CLUSTER_URL" \
 env SNOWFLAKE_USER="$SNOWFLAKE_USER" \
 env PRIVATE_KEY_VALUE="$PRIVATE_KEY_VALUE" \
+env SNOWFLAKE_DB="$SNOWFLAKE_DB" \
+env SNOWFLAKE_SCHEMA="$SNOWFLAKE_SCHEMA" \
+env STREAMING_ROLE="$STREAMING_ROLE" \
 envsubst < $SNOWFLAKE_CONNECTOR_PROPERTIES_TEMPLATE \
 > "$SNOWFLAKE_CONNECTOR_PROPERTIES_FILE"
 

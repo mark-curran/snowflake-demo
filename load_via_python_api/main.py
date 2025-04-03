@@ -56,12 +56,26 @@ def create_schema_and_database():
     snowflake_streaming_attributes = get_snowflake_attributes()
 
     # TODO: Transaction scoping.
+    # TODO: Make the user role a member of the database.
     cursor = connection.cursor()
+
+    cursor.execute(
+        "CREATE OR REPLACE ROLE "
+        + f"IDENTIFIER('{snowflake_streaming_attributes.streaming_user_role}')"
+    )
+
+    # Configure the database.
     cursor.execute(
         "CREATE DATABASE IF NOT EXISTS "
         + f"IDENTIFIER('{snowflake_streaming_attributes.database_name}')"
     )
+    cursor.execute(
+        "GRANT USAGE ON DATABASE "
+        + f"IDENTIFIER('{snowflake_streaming_attributes.database_name}') "
+        + f"TO ROLE IDENTIFIER('{snowflake_streaming_attributes.streaming_user_role}')"
+    )
 
+    # Configure the warehouse.
     cursor.execute(
         (
             "CREATE OR REPLACE WAREHOUSE "
@@ -70,24 +84,34 @@ def create_schema_and_database():
         )
     )
     cursor.execute(
-        "CREATE OR REPLACE ROLE "
-        + f"IDENTIFIER('{snowflake_streaming_attributes.streaming_user_role}')"
-    )
-    cursor.execute(
         "GRANT USAGE ON WAREHOUSE "
         + f"IDENTIFIER('{snowflake_streaming_attributes.streaming_warehouse}')"
         + f"TO ROLE IDENTIFIER('{snowflake_streaming_attributes.streaming_user_role}')"
     )
 
-    # For simplicity run the streaming service as the current user.
-    cursor.execute(
-        f"GRANT ROLE IDENTIFIER('{snowflake_streaming_attributes.streaming_user_role}')"
-        + f"TO USER IDENTIFIER('{connection.user}')"
-    )
+    # Configure the schema.
     cursor.execute(f"USE IDENTIFIER('{snowflake_streaming_attributes.database_name}');")
     cursor.execute(
         "CREATE OR REPLACE SCHEMA "
         + f"IDENTIFIER('{snowflake_streaming_attributes.streaming_schema}');"
+    )
+    cursor.execute(
+        "GRANT USAGE ON SCHEMA "
+        + f"IDENTIFIER('{snowflake_streaming_attributes.streaming_schema}') "
+        + f"TO ROLE IDENTIFIER('{snowflake_streaming_attributes.streaming_user_role}')"
+    )
+    # NOTE: In Snowflake the role that creates a table automatically owns it.
+    cursor.execute(
+        "GRANT CREATE TABLE ON SCHEMA "
+        + f"IDENTIFIER('{snowflake_streaming_attributes.streaming_schema}') "
+        + f"TO ROLE IDENTIFIER('{snowflake_streaming_attributes.streaming_user_role}')"
+    )
+
+    # NOTE: In this demo we only have one user.
+    cursor.execute(
+        "GRANT ROLE "
+        + f"IDENTIFIER('{snowflake_streaming_attributes.streaming_user_role}') "
+        + f"TO USER IDENTIFIER('{connection.user}')"
     )
 
 
