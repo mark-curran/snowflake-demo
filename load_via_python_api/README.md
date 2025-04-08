@@ -36,11 +36,18 @@ Create a file "connection_config.json" in the root of this repository
 
 ```json
 {
-    "account": "<my-account>",
-    "user": "<user-name>",
-    "private_key_file": "<path-to-private-key>",
-    "warehouse": "<warehouse>"
+  "account": "<my-account>",
+  "user": "<user-name>",
+  "private_key_file": "<path-to-private-key>",
+  "warehouse": "<warehouse>"
 }
+```
+
+## Generate Data Models
+
+```shell
+datamodel-codegen --input ../schema/customer.json --output customer.py --class-name Customer
+datamodel-codegen --input ../schema/order.json --output order.py --class-name Order
 ```
 
 ## (Optional) Setup asdf
