@@ -5,7 +5,14 @@ from io import BytesIO, StringIO
 from typing import TypedDict
 from uuid import uuid4
 
-from config import SNOWFLAKE_CREDENTIALS, SNOWFLAKE_OBJECTS, SNOWFLAKE_ROLE
+from config import (
+    CUSTOMER_SETTINGS,
+    SNOWFLAKE_CREDENTIALS,
+    SNOWFLAKE_OBJECTS,
+    SNOWFLAKE_ROLE,
+)
+from customer import Customer
+from data_generator import create_fake_customer
 from logger import logger
 from snowflake.connector import SnowflakeConnection, connect
 
@@ -32,6 +39,16 @@ def main():
 
     # TODO: Eventually manage database, schema and role via terraform.
     create_copy_customer_objects(connection)
+    customers = create_sample_customer_data(CUSTOMER_SETTINGS.number_of_customers)
+
+
+def create_sample_customer_data(number: int) -> list[Customer]:
+    customers: list[Customer] = []
+
+    for _ in range(number):
+        customers.append(create_fake_customer())
+
+    return customers
 
 
 def create_copy_customer_objects(connection: SnowflakeConnection) -> None:

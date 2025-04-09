@@ -27,5 +27,6 @@ class SNOWFLAKE_ROLE:
 
 
 @dataclass(frozen=True)
-class CUSTOMER_OBJECTS:
+class CUSTOMER_SETTINGS:
     table: str = getenv("CUSTOMER_TABLE", "")
+    number_of_customers: int = int(getenv("NUMBER_OF_CUSTOMERS", ""))
