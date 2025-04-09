@@ -5,6 +5,7 @@ from io import BytesIO, StringIO
 from typing import TypedDict
 from uuid import uuid4
 
+from config import SNOWFLAKE_CREDENTIALS, SNOWFLAKE_OBJECTS, SNOWFLAKE_ROLE
 from logger import logger
 from snowflake.connector import SnowflakeConnection, connect
 
@@ -27,17 +28,81 @@ class SnowflakeStreamingAttributes:
 
 def main():
 
-    load_sample_data()
+    connection = get_snowflake_connection()
+
+    # TODO: Eventually manage database, schema and role via terraform.
+    create_copy_customer_objects(connection)
+
+
+def create_copy_customer_objects(connection: SnowflakeConnection) -> None:
+    """
+    Create the database, schema, warehouse and roles for copying customer
+    data into Snowflake.
+
+    Assigns the role to the user who opened the connection.
+    """
+
+    cursor = connection.cursor()
+    cursor.execute("CREATE OR REPLACE ROLE " + f"IDENTIFIER('{SNOWFLAKE_ROLE.role}')")
+
+    # Configure the database.
+    cursor.execute(
+        "CREATE DATABASE IF NOT EXISTS " + f"IDENTIFIER('{SNOWFLAKE_OBJECTS.database}')"
+    )
+    cursor.execute(
+        "GRANT USAGE ON DATABASE "
+        + f"IDENTIFIER('{SNOWFLAKE_OBJECTS.database}') "
+        + f"TO ROLE IDENTIFIER('{SNOWFLAKE_ROLE.role}')"
+    )
+
+    # Configure the warehouse.
+    cursor.execute(
+        (
+            "CREATE OR REPLACE WAREHOUSE "
+            + f"IDENTIFIER('{SNOWFLAKE_OBJECTS.warehouse}')"
+            + " WITH WAREHOUSE_SIZE = 'SMALL'"
+        )
+    )
+    cursor.execute(
+        "GRANT USAGE ON WAREHOUSE "
+        + f"IDENTIFIER('{SNOWFLAKE_OBJECTS.warehouse}')"
+        + f"TO ROLE IDENTIFIER('{SNOWFLAKE_ROLE.role}')"
+    )
+
+    # Configure the schema.
+    cursor.execute(f"USE IDENTIFIER('{SNOWFLAKE_OBJECTS.database}');")
+    cursor.execute(
+        "CREATE OR REPLACE SCHEMA " + f"IDENTIFIER('{SNOWFLAKE_OBJECTS.schema}');"
+    )
+    cursor.execute(
+        "GRANT USAGE ON SCHEMA "
+        + f"IDENTIFIER('{SNOWFLAKE_OBJECTS.schema}') "
+        + f"TO ROLE IDENTIFIER('{SNOWFLAKE_ROLE.role}')"
+    )
+    # NOTE: In Snowflake the role that creates a table automatically owns it.
+    cursor.execute(
+        "GRANT CREATE TABLE ON SCHEMA "
+        + f"IDENTIFIER('{SNOWFLAKE_OBJECTS.schema}') "
+        + f"TO ROLE IDENTIFIER('{SNOWFLAKE_ROLE.role}')"
+    )
+
+    # NOTE: In this demo we only have one user.
+    cursor.execute(
+        "GRANT ROLE "
+        + f"IDENTIFIER('{SNOWFLAKE_ROLE.role}') "
+        + f"TO USER IDENTIFIER('{connection.user}')"
+    )
+
+    cursor.close()
 
 
 def get_snowflake_connection() -> SnowflakeConnection:
 
-    # TODO: Make a get_connection_config function.
-    with open("connection_config.json", "r") as file:
-        # TODO: Type definition for variable `config`.
-        config = json.load(file)
-
-    connection = connect(**config)
+    connection = connect(
+        account=SNOWFLAKE_CREDENTIALS.account,
+        user=SNOWFLAKE_CREDENTIALS.user,
+        private_key=SNOWFLAKE_CREDENTIALS.private_key,
+    )
 
     return connection
 
@@ -50,7 +115,7 @@ def get_snowflake_attributes() -> SnowflakeStreamingAttributes:
     return SnowflakeStreamingAttributes(**config)
 
 
-def create_schema_and_database():
+def streaming_schema_and_database():
     # Create the streaming database, schema and warehouse.
     connection = get_snowflake_connection()
     snowflake_streaming_attributes = get_snowflake_attributes()
@@ -183,4 +248,5 @@ def load_sample_data():
 
 
 if __name__ == "__main__":
-    create_schema_and_database()
+
+    main()

@@ -13,3 +13,6 @@ dist
 
 # Ignore the credentials file.
 event_hub_connection.json
+
+# Ignore a helper script to export your local environment variables.
+export_envvars.sh
