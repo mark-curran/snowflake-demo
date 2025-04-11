@@ -4,20 +4,22 @@
   "description": "Load data into Snowflake via Kafka.",
   "main": "index.js",
   "scripts": {
-    "test": "run"
+    "test": "jest"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/jest": "^29.5.14",
     "@types/node": "^22.13.10",
+    "jest": "^29.7.0",
     "json-schema-to-typescript": "^15.0.4",
     "prettier": "3.5.3",
-    "typescript": "^5.8.2",
-    "winston": "^3.17.0"
+    "typescript": "^5.8.2"
   },
   "dependencies": {
     "async-mutex": "^0.5.0",
     "node-rdkafka": "^3.3.1",
+    "winston": "^3.17.0",
     "zod": "^3.24.2"
   }
 }
