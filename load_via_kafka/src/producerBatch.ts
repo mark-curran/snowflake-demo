@@ -1,8 +1,8 @@
 import { Producer } from 'node-rdkafka';
 import logger from './logger';
-import { busAck, decodeKey, ProducerInput } from './connection';
+import { busAck, ProducerInput } from './rdkafkaSupplementaryTypes';
+import { decodeKey } from './rdkafkaHelpers';
 
-// TODO: Rename to ProducerBatch.
 export class ProducerBatch {
   private static activeProducers: Set<string> = new Set();
   private producer: Producer;

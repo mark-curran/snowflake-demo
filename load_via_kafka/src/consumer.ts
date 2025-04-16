@@ -1,12 +1,11 @@
 import { KafkaConsumer, Message } from 'node-rdkafka';
+import { consumerConfig, TOPIC } from './connection';
 import {
-  connectAndResolve,
-  consumerConfig,
-  disconnectAndResolve,
-  subscribeAndResolve,
-  TOPIC,
   seekAndResolve,
-} from './connection';
+  connectAndResolve,
+  subscribeAndResolve,
+  disconnectAndResolve,
+} from './rdkafkaHelpers';
 import logger from './logger';
 import { ConsumerBatch } from './consumerBatch';
 
