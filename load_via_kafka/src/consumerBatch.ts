@@ -9,7 +9,7 @@ import logger from './logger';
 import { AsyncQueue } from './exclusiveQueue';
 
 export class ConsumerBatch {
-  private static activeClients = new Set<Consumer>();
+  private static activeConsumers = new Set<Consumer>();
   private consumer: Consumer;
   private consumptionCallback: (message: Message) => Promise<void>;
   private messageBuffer: AsyncQueue<Message>;
@@ -35,10 +35,10 @@ export class ConsumerBatch {
     }
 
     // Check the consumer isn't already in the active set.
-    if (ConsumerBatch.activeClients.has(consumer)) {
+    if (ConsumerBatch.activeConsumers.has(consumer)) {
       throw new Error(`There is already a consumer batch with this consumer`);
     } else {
-      ConsumerBatch.activeClients.add(consumer);
+      ConsumerBatch.activeConsumers.add(consumer);
       this.consumer = consumer;
       this.consumer.assign([initTopicPartitionOffsets]);
     }

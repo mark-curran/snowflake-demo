@@ -3,7 +3,7 @@ import { Producer, busAck, ProducerInput } from './rdkafkaSupplementaryTypes';
 import { decodeKey } from './rdkafkaHelpers';
 
 export class ProducerBatch {
-  private static activeProducers: Set<string> = new Set();
+  private static activeProducers: Set<Producer> = new Set();
   private producer: Producer;
   private sendingBatch: boolean;
   private _busAcks: busAck[];
@@ -24,33 +24,21 @@ export class ProducerBatch {
       throw new Error('Producer must be connected to use ProducerBatch class.');
     }
 
-    // Check the producer has a `name` attribute, which is not included in type definition.
-    if ('name' in producer) {
-      var nameAttribute = producer.name;
+    // Check the consumer isn't already in the active set.
+    if (ProducerBatch.activeProducers.has(producer)) {
+      throw new Error('There is already a producer batch with this producer.');
     } else {
-      throw new Error(`Producer does not have a name.`);
-    }
-
-    // Check the name is not an empty string or undefined.
-    if (ProducerBatch.validProducerName(nameAttribute)) {
-      // Cast as a string now that we know it's a valid name.
-      const producerName = nameAttribute as string;
-
-      logger.debug(`Adding producer named ${producerName} to a message batch.`);
-      ProducerBatch.addToActiveProducers(producerName);
-      this.producerName = producerName;
+      ProducerBatch.activeProducers.add(producer);
       this.producer = producer;
-    } else {
-      throw new Error(`Producer name "${nameAttribute}" is not a valid name`);
+      this.producerName = (producer as any).name ?? 'unname_client';
     }
 
-    // Check producer has no delivery report listeners.
-    // TODO: Does 'delivery-report' belong to an enum?
+    // Check there are no active listeners to the 'delivery-report' event for this consumer.
     const existingListeners = producer.listenerCount('delivery-report');
-    if (existingListeners > 0 && allowExistingDeliveryListeners) {
+    if (existingListeners > 0 && !allowExistingDeliveryListeners) {
       throw new Error(
-        `Producer named ${this.producerName} has existing delivery report listeners.` +
-          'Set allowExistingDeliveryListeners to true to allow extra listeners.',
+        'Producer has existing delivery report listeners, ' +
+          'set allowExistingDeliveryListeners to true to allow extra listeners.',
       );
     } else this.setDeliveryReportListener();
 
@@ -62,21 +50,6 @@ export class ProducerBatch {
     this.pollInterval = pollInterval;
     this.batchTimeout = batchTimeout;
     this.sendingBatch = false;
-  }
-
-  private static addToActiveProducers(producerName: string) {
-    if (ProducerBatch.activeProducers.has(producerName)) {
-      throw new Error(
-        `There already exists a ProducerBatch with producer named ${producerName}`,
-      );
-    } else {
-      ProducerBatch.activeProducers.add(producerName);
-    }
-  }
-
-  // TODO: Make this a helper function?
-  private static validProducerName(producerName: unknown): boolean {
-    return typeof producerName === 'string' && producerName.trim().length > 0;
   }
 
   private setDeliveryReportListener(): void {
@@ -104,8 +77,10 @@ export class ProducerBatch {
 
   public async sendBatch(producerInput: ProducerInput[]): Promise<void> {
     if (this.sendingBatch) {
-      throw new Error(
-        `Producer named ${this.producerName} is already sending a message batch.`,
+      return Promise.reject(
+        Error(
+          `Producer named ${this.producerName} is already sending a message batch.`,
+        ),
       );
     } else {
       this.sendingBatch = true;
