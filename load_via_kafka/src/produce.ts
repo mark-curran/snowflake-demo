@@ -1,6 +1,6 @@
 // Load data to Kafka.
 import { producerConfig, TOPIC } from './connection';
-import { ProducerInput, Producer } from './rdkafkaSupplementaryTypes';
+import { ProducerInput, type Producer } from './rdkafkaSupplementaryTypes';
 import { Producer as RdkafkaProducer } from 'node-rdkafka';
 import logger from './logger';
 import { ProducerBatch } from './producerBatch';

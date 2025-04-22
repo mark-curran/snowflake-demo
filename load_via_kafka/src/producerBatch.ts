@@ -1,6 +1,5 @@
-import { Producer } from './rdkafkaSupplementaryTypes';
 import logger from './logger';
-import { busAck, ProducerInput } from './rdkafkaSupplementaryTypes';
+import { Producer, busAck, ProducerInput } from './rdkafkaSupplementaryTypes';
 import { decodeKey } from './rdkafkaHelpers';
 
 export class ProducerBatch {

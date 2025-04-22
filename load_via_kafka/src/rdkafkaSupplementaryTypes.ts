@@ -31,7 +31,6 @@ export type Client = Pick<
   RdkafkaClient<RdkafkaKafkaClientEvents>,
   ClientMethods
 >;
-
 export type Producer = Pick<RdkafkaProducer, ProducerMethods>;
 
 export type busAck = {
