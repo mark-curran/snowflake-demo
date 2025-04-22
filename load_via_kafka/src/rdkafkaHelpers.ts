@@ -6,12 +6,11 @@ import {
   MessageKey,
   KafkaConsumer,
   TopicPartitionOffset,
-  Client,
-  KafkaClientEvents,
   ClientMetrics,
   SubscribeTopicList,
   ReadyInfo,
 } from 'node-rdkafka';
+import { Client } from './rdkafkaSupplementaryTypes';
 import logger from './logger';
 
 export function decodeKey(key: MessageKey): string | null | undefined {
@@ -38,7 +37,7 @@ export async function seekAndResolve(
 }
 
 export async function disconnectAndResolve(
-  client: Client<KafkaClientEvents>,
+  client: Client,
 ): Promise<ClientMetrics> {
   return new Promise((resolve) => {
     client.on('disconnected', (clientMetrics) => {
@@ -62,9 +61,7 @@ export async function subscribeAndResolve(
   });
 }
 
-export async function connectAndResolve(
-  client: Client<KafkaClientEvents>,
-): Promise<ReadyInfo> {
+export async function connectAndResolve(client: Client): Promise<ReadyInfo> {
   return new Promise((resolve) => {
     client.on('ready', (readyInfo) => {
       resolve(readyInfo);

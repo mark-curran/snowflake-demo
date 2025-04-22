@@ -1,9 +1,10 @@
 // Load data to Kafka.
 import { producerConfig, TOPIC } from './connection';
-import { ProducerInput } from './rdkafkaSupplementaryTypes';
-import { Producer, ReadyInfo } from 'node-rdkafka';
+import { ProducerInput, Producer } from './rdkafkaSupplementaryTypes';
+import { Producer as RdkafkaProducer } from 'node-rdkafka';
 import logger from './logger';
 import { ProducerBatch } from './producerBatch';
+import { connectAndResolve, disconnectAndResolve } from './rdkafkaHelpers';
 
 export async function produceData(
   numMessages: number,
@@ -13,30 +14,34 @@ export async function produceData(
   // Get a bunch of producers.
   const producers: Producer[] = [];
   for (var j = 0; j < numProducers; j++) {
-    producers.push(getConfiguredProducer(`producer-${j}`));
+    producers.push(
+      new RdkafkaProducer({
+        ...producerConfig,
+        'client.id': `producer-${j}`,
+      }),
+    );
   }
 
   // Wait for them all to connect.
   logger.info(`Waiting for ${producers.length} producers to connect.`);
-
-  const readyInfo = await Promise.all(producers.map(connectAndResolve));
+  const readyInfoObjects = await Promise.all(producers.map(connectAndResolve));
   logger.info(`Producers have returned ready info.`);
-  readyInfo.forEach((readyInfo) => {
+  readyInfoObjects.forEach((readyInfo) => {
     logger.info(`Ready info: ${JSON.stringify(readyInfo)}`);
   });
 
-  // Get a bunch of raw messages.
+  // Generate a bunch of raw messages.
   const inputs = generateProducerInput(numMessages);
 
-  // Get some batches to manage sending those messages.
-  const batches = producers.map((producer) => {
+  // Get some ProducerBatches to manage sending those messages.
+  const producerBatches = producers.map((producer) => {
     return new ProducerBatch(producer, maxBatchSize);
   });
 
   // Split the input messages into batches.
   const batchedInputs = new Map<ProducerBatch, ProducerInput[]>();
   inputs.forEach((input, j) => {
-    const batch = batches[j % producers.length];
+    const batch = producerBatches[j % producers.length];
     batchedInputs.set(batch, [...(batchedInputs.get(batch) ?? []), input]);
   });
 
@@ -49,19 +54,22 @@ export async function produceData(
 
   // Print the summaries.
   logger.info('Printing delivery summaries.');
-  batches.forEach((batch) => {
-    batch.busAcks.forEach(({ err, report }) => {
+  producerBatches.forEach((producerBatch) => {
+    producerBatch.busAcks.forEach(({ err, report }) => {
       logger.info(
-        `Message key ${report.key} timestamp ${report.timestamp} sent to parition ${report.partition}`,
+        `Message key ${report.key} timestamp ${report.timestamp} sent to parition ${report.partition} + with error ${err}`,
       );
     });
   });
 
   // Disconect each producer.
   logger.info('Disconnecting producers.');
-  producers.forEach((producer) => {
-    producer.disconnect();
-  });
+  const clientMetricsObjects = await Promise.all(
+    producers.map((producer) => disconnectAndResolve(producer)),
+  );
+  clientMetricsObjects.map((clientMetrics) =>
+    logger.info(`Client metrics ${JSON.stringify(clientMetrics)}`),
+  );
 }
 
 function generateProducerInput(numMessages: number): ProducerInput[] {
@@ -86,30 +94,4 @@ function generateProducerInput(numMessages: number): ProducerInput[] {
   }
 
   return messages;
-}
-
-function getConfiguredProducer(clientId?: string): Producer {
-  const producer = new Producer({ ...producerConfig, 'client.id': clientId });
-
-  // Configuration options.
-  producer.on('event.log', (eventData) => logger.debug(eventData));
-  producer.on('event.error', (error) =>
-    logger.error(`Kafka producer error ${error}`),
-  );
-  producer.on('disconnected', (clientMetrics) => {
-    logger.info('Producer disconnected: ' + JSON.stringify(clientMetrics));
-  });
-
-  return producer;
-}
-
-// TODO: Use the common function for this.
-async function connectAndResolve(producer: Producer): Promise<ReadyInfo> {
-  return new Promise((resolve) => {
-    producer.on('ready', (readyInfo) => {
-      resolve(readyInfo);
-    });
-
-    producer.connect();
-  });
 }

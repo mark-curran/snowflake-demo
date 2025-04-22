@@ -1,4 +1,4 @@
-import { Producer } from 'node-rdkafka';
+import { Producer } from './rdkafkaSupplementaryTypes';
 import logger from './logger';
 import { busAck, ProducerInput } from './rdkafkaSupplementaryTypes';
 import { decodeKey } from './rdkafkaHelpers';
@@ -138,17 +138,17 @@ export class ProducerBatch {
       );
     });
 
-    const timeStartWaiting = Date.now();
     for (;;) {
+      let timeStartChecking = Date.now();
       logger.debug(
-        `Producer ${this.producerName} entering loop where we wait for acknowledgements.`,
+        `Producer ${this.producerName} entering loop where we check for acknowledgements.`,
       );
       if (inputLength === this._busAcks.length) {
         logger.debug('All acknowledgements received.');
         break;
       }
 
-      if (timeStartWaiting > timeStartSending + this.batchTimeout) {
+      if (timeStartChecking > timeStartSending + this.batchTimeout) {
         throw new Error(
           `Message batch from producer ${this.producerName} exceeded batch timeout.`,
         );
