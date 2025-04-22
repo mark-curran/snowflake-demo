@@ -10,8 +10,9 @@ import {
   SubscribeTopicList,
   ReadyInfo,
 } from 'node-rdkafka';
-import { Client } from './rdkafkaSupplementaryTypes';
+import { Client, Consumer } from './rdkafkaSupplementaryTypes';
 import logger from './logger';
+import { ConsumerBatch } from './consumerBatch';
 
 export function decodeKey(key: MessageKey): string | null | undefined {
   if (typeof key === 'string') {
@@ -23,7 +24,7 @@ export function decodeKey(key: MessageKey): string | null | undefined {
 }
 
 export async function seekAndResolve(
-  consumer: KafkaConsumer,
+  consumer: Consumer,
   topicPartitionOffset: TopicPartitionOffset,
 ): Promise<void> {
   new Promise((resolve) => {
@@ -49,7 +50,7 @@ export async function disconnectAndResolve(
 }
 
 export async function subscribeAndResolve(
-  consumer: KafkaConsumer,
+  consumer: Consumer,
   topics: SubscribeTopicList,
 ): Promise<SubscribeTopicList> {
   return new Promise((resolve) => {

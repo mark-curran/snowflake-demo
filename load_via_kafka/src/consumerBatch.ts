@@ -1,15 +1,16 @@
-import {
-  KafkaConsumer,
+import type {
   KafkaConsumerEvents,
+  LibrdKafkaError,
   Message,
   TopicPartitionOffset,
 } from 'node-rdkafka';
+import { Consumer } from './rdkafkaSupplementaryTypes';
 import logger from './logger';
 import { AsyncQueue } from './exclusiveQueue';
 
 export class ConsumerBatch {
-  private static activeClients = new Set<KafkaConsumer>();
-  private consumer: KafkaConsumer;
+  private static activeClients = new Set<Consumer>();
+  private consumer: Consumer;
   private consumptionCallback: (message: Message) => Promise<void>;
   private messageBuffer: AsyncQueue<Message>;
   private batchSize: number; // NOTE: This is per topic-partition.
@@ -18,7 +19,7 @@ export class ConsumerBatch {
   private topicPartitionOffsets: TopicPartitionOffset;
 
   constructor(
-    consumer: KafkaConsumer,
+    consumer: Consumer,
     initTopicPartitionOffsets: TopicPartitionOffset,
     consumptionCallback: (message: Message) => Promise<void>,
     batchSize = 1,
@@ -93,12 +94,22 @@ export class ConsumerBatch {
     */
     const localTopicPartitionOffset = structuredClone(topicPartitionOffset);
     new Promise((resolve) => {
-      this.consumer.seek(localTopicPartitionOffset, null, (err) => {
-        logger.debug(
-          `Finished seeking to ${JSON.stringify(localTopicPartitionOffset)}.`,
-        );
-        resolve;
-      });
+      this.consumer.seek(
+        localTopicPartitionOffset,
+        null,
+        (err: LibrdKafkaError) => {
+          if (err) {
+            logger.error(
+              `LibrdKafka error ${JSON.stringify(err)} while seeking to  ${JSON.stringify(topicPartitionOffset)}.`,
+            );
+          } else {
+            logger.debug(
+              `Finished seeking to ${JSON.stringify(localTopicPartitionOffset)}.`,
+            );
+          }
+          resolve;
+        },
+      );
     });
   }
 

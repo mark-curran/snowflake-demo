@@ -10,11 +10,9 @@ import type {
   MessageValue,
   MessageKey,
   MessageHeader,
-} from 'node-rdkafka';
-
-import type {
   Client as RdkafkaClient,
   Producer as RdkafkaProducer,
+  KafkaConsumer as RdkafkaConsumer,
   KafkaClientEvents as RdkafkaKafkaClientEvents,
 } from 'node-rdkafka';
 
@@ -26,12 +24,20 @@ type ClientMethods =
   | 'listenerCount';
 
 type ProducerMethods = ClientMethods | 'produce' | 'poll';
+type ConsumerMethods =
+  | ClientMethods
+  | 'consume'
+  | 'assign'
+  | 'subscription'
+  | 'subscribe'
+  | 'seek';
 
 export type Client = Pick<
   RdkafkaClient<RdkafkaKafkaClientEvents>,
   ClientMethods
 >;
 export type Producer = Pick<RdkafkaProducer, ProducerMethods>;
+export type Consumer = Pick<RdkafkaConsumer, ConsumerMethods>;
 
 export type busAck = {
   err: LibrdKafkaError;

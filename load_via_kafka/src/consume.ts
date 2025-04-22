@@ -1,4 +1,5 @@
-import { KafkaConsumer, Message } from 'node-rdkafka';
+import { Consumer } from './rdkafkaSupplementaryTypes';
+import { KafkaConsumer, type Message } from 'node-rdkafka';
 import { consumerConfig, TOPIC } from './connection';
 import {
   seekAndResolve,
@@ -10,7 +11,7 @@ import logger from './logger';
 import { ConsumerBatch } from './consumerBatch';
 
 export async function consumeBatch() {
-  const consumer = new KafkaConsumer(consumerConfig, {});
+  const consumer: Consumer = new KafkaConsumer(consumerConfig, {});
 
   const readyInfo = await connectAndResolve(consumer);
   logger.info(`Consumer is ready ${JSON.stringify(readyInfo)}`);
