@@ -2,19 +2,25 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "type": "java",
-      "name": "App",
-      "request": "launch",
-      "mainClass": "com.example.App",
-      "projectName": "load_via_snowpipe_streaming"
-    },
-    {
       "name": "Debug TypeScript",
       "type": "node",
       "request": "launch",
       "program": "dist/index.js",
       "preLaunchTask": "Compile TypeScript",
       "sourceMaps": true
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Jest Test File",
+      "program": "${workspaceFolder}/load_via_kafka/node_modules/.bin/jest",
+      "cwd": "${workspaceFolder}/load_via_kafka",
+      "args": ["${file}"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "env": {
+        "NODE_ENV": "test"
+      }
     }
   ]
 }
