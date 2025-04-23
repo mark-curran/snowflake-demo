@@ -2,7 +2,7 @@
 import { createLogger, format, transports } from 'winston';
 
 const logger = createLogger({
-  level: 'debug',
+  level: 'info',
   transports: [new transports.Console()],
   // TODO: Add formatting.
 });

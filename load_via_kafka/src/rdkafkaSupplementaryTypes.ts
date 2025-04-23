@@ -40,9 +40,9 @@ export type Client = Pick<
 export type Producer = Pick<RdkafkaProducer, ProducerMethods>;
 export type Consumer = Pick<RdkafkaConsumer, ConsumerMethods>;
 
-export type busAck = {
-  err: LibrdKafkaError;
+export type BusAck = {
   report: DeliveryReport;
+  err?: LibrdKafkaError;
 };
 
 export type ProducerInput = {

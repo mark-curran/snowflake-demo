@@ -1,12 +1,12 @@
 import logger from './logger';
-import { Producer, busAck, ProducerInput } from './rdkafkaSupplementaryTypes';
+import { Producer, BusAck, ProducerInput } from './rdkafkaSupplementaryTypes';
 import { decodeKey } from './rdkafkaHelpers';
 
 export class ProducerBatch {
   private static activeProducers: Set<Producer> = new Set();
   private producer: Producer;
   private sendingBatch: boolean;
-  private _busAcks: busAck[];
+  private _busAcks: BusAck[];
   public producerName: string;
   public batchSize: number;
   public pollInterval: number;
@@ -65,7 +65,7 @@ export class ProducerBatch {
     });
   }
 
-  get busAcks(): busAck[] {
+  get busAcks(): BusAck[] {
     if (this.sendingBatch) {
       throw new Error(
         'Cannot access bus acknowledgements until sending is complete.',
@@ -92,7 +92,7 @@ export class ProducerBatch {
 
     if (inputLength > this.batchSize) {
       throw new Error(
-        `Length of messages ${producerInput.length} cannot exceed size of maximum batch size ${this.batchSize}`,
+        `Length of messages ${producerInput.length} cannot exceed size of maximum batch size ${this.batchSize}.`,
       );
     }
 
@@ -123,6 +123,7 @@ export class ProducerBatch {
       }
 
       if (timeStartChecking > timeStartSending + this.batchTimeout) {
+        this.sendingBatch = false;
         throw new Error(
           `Message batch from producer ${this.producerName} exceeded batch timeout.`,
         );
