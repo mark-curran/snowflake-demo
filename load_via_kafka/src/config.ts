@@ -5,6 +5,7 @@ type RequiredEnvVars = {
   PRIMARY_CONNECTION_STRING: string;
   TOPIC: string;
   MODE: Mode;
+  // TODO: Optional env vars for LOG_LEVEL
 };
 type AppConfig = {
   broker: string;

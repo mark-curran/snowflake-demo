@@ -2,9 +2,8 @@ import type {
   KafkaConsumerEvents,
   LibrdKafkaError,
   Message,
-  TopicPartitionOffset,
 } from 'node-rdkafka';
-import { Consumer } from './rdkafkaSupplementaryTypes';
+import { Consumer, TopicPartitionOffset } from './rdkafkaSupplementaryTypes';
 import logger from './logger';
 import { AsyncQueue } from './exclusiveQueue';
 
@@ -113,8 +112,7 @@ export class ConsumerBatch {
     });
   }
 
-  private async consumeTopicPartitionOffset(): Promise<number> {
-    // TODO: Cannot be invoked while consuming another batch.
+  private async consumeOneBatch(): Promise<number> {
     const startBufferLength = await this.messageBuffer.getLength();
 
     /*
@@ -156,7 +154,7 @@ export class ConsumerBatch {
 
       var currentBufferLength = await this.messageBuffer.getLength();
       if (currentBufferLength === 0) {
-        // Wait some time for the buffer to fill up.
+        // If empty, wait some time for the buffer to fill up then restart the loop.
         await new Promise((resolve) =>
           setTimeout(resolve, this.clientPollInterval),
         );
@@ -169,6 +167,8 @@ export class ConsumerBatch {
         );
 
         logger.debug(`Spliced ${messagesFromBuffer.length} from the buffer.`);
+
+        // Wait for the consumption callbacks to finish.
         await Promise.all(
           messagesFromBuffer.map((message) => {
             this.consumptionCallback(message);
@@ -195,20 +195,22 @@ export class ConsumerBatch {
     }
   }
 
-  public async consumeInBatches(
-    number?: number,
-    backOffCallback = new Promise((resolve) => {
-      setTimeout(resolve, 1000);
-    }),
-  ) {
+  public async consumeInBatches(max_messages?: number, timeout: number = 5000) {
     var messagesProcessed = 0;
 
+    const timeStartConsumption = Date.now();
+
     for (;;) {
-      const processedOneBatch = await this.consumeTopicPartitionOffset();
+      if (Date.now() > timeStartConsumption + timeout) {
+        logger.debug('Timeout for processing batches exceeded.');
+        break;
+      }
+
+      const processedOneBatch = await this.consumeOneBatch();
       messagesProcessed += processedOneBatch;
 
-      if (number) {
-        if (messagesProcessed >= number) {
+      if (max_messages) {
+        if (messagesProcessed >= max_messages) {
           logger.debug(
             `Processed ${messagesProcessed} messages, breaking from the loop.`,
           );
@@ -216,8 +218,5 @@ export class ConsumerBatch {
         }
       }
     }
-
-    logger.debug('Calling back off callback.');
-    await backOffCallback;
   }
 }

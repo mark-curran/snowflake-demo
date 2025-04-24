@@ -7,9 +7,11 @@ import type {
   LibrdKafkaError,
   DeliveryReport,
   NumberNullUndefined,
+  Message as RdkafkaMessage,
   MessageValue,
   MessageKey,
   MessageHeader,
+  TopicPartitionOffset as RdkafkaTopicPartitionOffset,
   Client as RdkafkaClient,
   Producer as RdkafkaProducer,
   KafkaConsumer as RdkafkaConsumer,
@@ -39,6 +41,9 @@ export type Client = Pick<
 
 export type Producer = Pick<RdkafkaProducer, ProducerMethods>;
 export type Consumer = Pick<RdkafkaConsumer, ConsumerMethods>;
+
+export type TopicPartitionOffset = RdkafkaTopicPartitionOffset;
+export type Message = RdkafkaMessage;
 
 export type BusAck = {
   report: DeliveryReport;
