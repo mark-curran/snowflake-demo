@@ -4,7 +4,6 @@
  */
 import {
   MessageKey,
-  KafkaConsumer,
   TopicPartitionOffset,
   ClientMetrics,
   SubscribeTopicList,
@@ -12,7 +11,6 @@ import {
 } from 'node-rdkafka';
 import { Client, Consumer } from './rdkafkaSupplementaryTypes';
 import logger from './logger';
-import { ConsumerBatch } from './consumerBatch';
 
 export function decodeKey(key: MessageKey): string | null | undefined {
   if (typeof key === 'string') {
@@ -27,6 +25,10 @@ export async function seekAndResolve(
   consumer: Consumer,
   topicPartitionOffset: TopicPartitionOffset,
 ): Promise<void> {
+  /* 
+  NOTE: rd-kafka doesn't have a seek successful event, so must pass the callback
+  inline.
+  */
   new Promise((resolve) => {
     consumer.seek(topicPartitionOffset, null, (err) => {
       if (!err) {
