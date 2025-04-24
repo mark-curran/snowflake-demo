@@ -5,7 +5,7 @@ import type {
 } from 'node-rdkafka';
 import { Consumer, TopicPartitionOffset } from './rdkafkaSupplementaryTypes';
 import logger from './logger';
-import { AsyncQueue } from './exclusiveQueue';
+import { AsyncQueue } from './asyncQueue';
 
 export class ConsumerBatch {
   private static activeConsumers = new Set<Consumer>();

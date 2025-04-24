@@ -1,6 +1,6 @@
 import { EventEmitter } from 'stream';
 import { ConsumerBatch } from '../src/consumerBatch';
-import { AsyncQueue } from '../src/exclusiveQueue';
+import { AsyncQueue } from '../src/asyncQueue';
 import {
   Consumer,
   TopicPartitionOffset,
