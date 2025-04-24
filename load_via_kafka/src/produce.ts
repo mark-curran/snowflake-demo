@@ -5,6 +5,7 @@ import { Producer as RdkafkaProducer } from 'node-rdkafka';
 import logger from './logger';
 import { ProducerBatch } from './producerBatch';
 import { connectAndResolve, disconnectAndResolve } from './rdkafkaHelpers';
+import { generateProducerInput } from './dataGeneration';
 
 export async function produceData(
   numMessages: number,
@@ -70,28 +71,4 @@ export async function produceData(
   clientMetricsObjects.map((clientMetrics) =>
     logger.info(`Client metrics ${JSON.stringify(clientMetrics)}`),
   );
-}
-
-function generateProducerInput(numMessages: number): ProducerInput[] {
-  const messages: ProducerInput[] = [];
-
-  for (var j = 0; j < numMessages; j++) {
-    const person = {
-      id: j, // TODO: Replace with a more realistic non-colliding unique id.
-      name: `Joey Joe Joe Junior Number ${j}`,
-      age: 30 + j,
-    };
-    const value = Buffer.from(JSON.stringify(person), 'utf-8');
-
-    const inputs: ProducerInput = {
-      topic: TOPIC,
-      partition: undefined,
-      message: value,
-      key: `${person.id}`,
-    };
-
-    messages.push(inputs);
-  }
-
-  return messages;
 }
