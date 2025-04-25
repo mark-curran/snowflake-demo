@@ -1,6 +1,6 @@
 import { ProducerInput } from './rdkafkaSupplementaryTypes';
 import { TOPIC } from './connection';
-import { orderValidator } from './validator';
+import { orderValidator } from '@snowflake-demo/schemas';
 
 export function generateProducerInput(numMessages: number): ProducerInput[] {
   const messages: ProducerInput[] = [];
