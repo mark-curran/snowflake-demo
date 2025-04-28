@@ -13,8 +13,8 @@
     },
     "orderDate": {
       "type": "string",
-      "format": "date-time",
-      "description": "The date and time when the order was placed."
+      "description": "The date and time when the order was placed.",
+      "format": "date-time"
     },
     "totalAmount": {
       "type": "number",
