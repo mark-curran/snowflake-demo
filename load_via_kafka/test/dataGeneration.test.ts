@@ -7,14 +7,14 @@ jest.mock('../src/connection', () => ({
 const mockOrderValidator = jest.fn();
 mockOrderValidator.mockReturnValue(true);
 
-// jest.mock('.', () => ({
-//   orderValidator: mockOrderValidator,
-// }));
+jest.mock('@snowflake-demo/schemas', () => ({
+  orderValidator: mockOrderValidator,
+}));
 
 import { generateProducerInput } from '../src/dataGeneration';
 import { ProducerInput } from '../src/rdkafkaSupplementaryTypes';
 
-describe.skip('generateProducerInput', () => {
+describe('generateProducerInput', () => {
   let producerInput: ProducerInput[];
 
   afterEach(() => {
@@ -35,10 +35,10 @@ describe.skip('generateProducerInput', () => {
       );
     });
   });
-  it('throws if the validator returns an error', () => {
+  it('throws if the validator is false', () => {
     mockOrderValidator.mockReturnValue(false);
     expect(() => {
       generateProducerInput(3);
-    }).toThrow('does not conform to the order schema.');
+    }).toThrow('is not a valid order object:');
   });
 });
