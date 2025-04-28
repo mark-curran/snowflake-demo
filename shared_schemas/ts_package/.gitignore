@@ -1,0 +1,2 @@
+# These artefacts should be copied from the shared_schema/schemas/ when the package is built.
+src/order.json
