@@ -31,6 +31,7 @@ def main():
 
     load_customer_data(connection, customers)
 
+    logger.info("End of main script, closing Snowflake connection.")
     connection.close()
 
 

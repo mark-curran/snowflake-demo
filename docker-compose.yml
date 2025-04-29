@@ -1,0 +1,39 @@
+# Local development purposes only.
+
+services:
+  bulk-data-loader:
+    image: snowflake-loader:develop
+    build:
+      context: load_via_python_api/
+      target: production
+    environment:
+      LOG_LEVEL: INFO
+      NUMBER_OF_CUSTOMER: 5
+      CUSTOMER_TABLE: customer
+      CUSTOMER_JSON_FORMAT: customer_json_format
+    secrets:
+      - SNOWFLAKE_USER
+      - SNOWFLAKE_ACCOUNT
+      - SNOWFLAKE_PRIVATE_KEY
+      - SNOWFLAKE_DATABASE
+      - SNOWFLAKE_WAREHOUSE
+      - SNOWFLAKE_SCHEMA
+      - SNOWFLAKE_ROLE
+    volumes:
+      - ./load_via_python_api/src:/app/src
+
+secrets:
+  SNOWFLAKE_USER:
+    environment: SNOWFLAKE_USER
+  SNOWFLAKE_ACCOUNT:
+    environment: SNOWFLAKE_ACCOUNT
+  SNOWFLAKE_PRIVATE_KEY:
+    environment: SNOWFLAKE_PRIVATE_KEY
+  SNOWFLAKE_DATABASE:
+    environment: SNOWFLAKE_DATABASE
+  SNOWFLAKE_WAREHOUSE:
+    environment: SNOWFLAKE_WAREHOUSE
+  SNOWFLAKE_SCHEMA:
+    environment: SNOWFLAKE_SCHEMA
+  SNOWFLAKE_ROLE:
+    environment: SNOWFLAKE_ROLE
