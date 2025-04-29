@@ -24,3 +24,13 @@ module "event_hub" {
   event_hub_name = "test.entity"
   auth_rule_name = "test-auth-rule"
 }
+
+# module "vnet" {
+#   source = "./vnet"
+#   location = var.az_subscription_default_location
+# }
+
+module "container_registry" {
+  source = "./container_registry"
+  location = var.az_subscription_default_location
+}
