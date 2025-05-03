@@ -4,6 +4,7 @@ rsa_key.pub
 connection_config.json
 
 __pycache__
+.pytest_cache
 
 # Ignore node packages.
 node_modules
