@@ -17,3 +17,6 @@ event_hub_connection.json
 
 # Ignore a helper script to export your local environment variables.
 export_envvars.sh
+
+# MacOS file system metadata.
+.DS_store
