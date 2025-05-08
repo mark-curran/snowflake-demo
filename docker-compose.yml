@@ -11,6 +11,10 @@ services:
       NUMBER_OF_CUSTOMER: 5
       CUSTOMER_TABLE: customer
       CUSTOMER_JSON_FORMAT: customer_json_format
+      BULK_COPY_WAREHOUSE: BULK_COPY_WAREHOUSE
+      LOAD_STREAM_WAREHOUSE: LOAD_STREAM_WAREHOUSE
+      BULK_LOAD_ROLE: COPY_CUSTOMER_ROLE
+      STREAMING_DATA_ROLE: LOAD_ORDER_STREAM_ROLE
     secrets:
       - SNOWFLAKE_USER
       - SNOWFLAKE_ACCOUNT
@@ -21,6 +25,7 @@ services:
       - SNOWFLAKE_ROLE
     volumes:
       - ./load_via_python_api/src:/app/src
+    command: --mode init_job run
 
 secrets:
   SNOWFLAKE_USER:
