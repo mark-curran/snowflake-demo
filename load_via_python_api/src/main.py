@@ -1,37 +1,94 @@
-import json
-from dataclasses import dataclass
+from argparse import ArgumentParser
 from io import BytesIO, StringIO
 
-from config import CUSTOMER_SETTINGS, SNOWFLAKE_CREDENTIALS, SNOWFLAKE_OBJECTS
+from config import (
+    CUSTOMER_SETTINGS,
+    SNOWFLAKE_CREDENTIALS,
+    SNOWFLAKE_OBJECTS,
+    SNOWFLAKE_ROLE,
+)
 from customer import Customer
 from data_generator import create_fake_customer
 from logger import logger
 from snowflake.connector import SnowflakeConnection, connect
 from snowflake_utils import (
-    create_copy_customer_objects,
+    create_and_assign_roles,
+    create_bulk_loading_objects,
+    create_database_and_schema,
+    create_small_warehouse,
     get_copy_into_command,
     get_create_customer_table_command,
+    streaming_schema_and_database,
 )
 
 
-def main():
+def init_job(connection: SnowflakeConnection):
 
+    logger.info("Create Snowflake objects.")
     connection = connect(
         account=SNOWFLAKE_CREDENTIALS.account,
         user=SNOWFLAKE_CREDENTIALS.user,
         private_key=SNOWFLAKE_CREDENTIALS.private_key,
     )
 
-    create_copy_customer_objects(connection)
+    logger.info("Creating database.")
+    create_database_and_schema(connection)
 
+    logger.info("Creating bulk loading warehouse.")
+    create_small_warehouse(connection, SNOWFLAKE_OBJECTS.bulk_load_warehouse)
+    logger.info("Creating streaming warehouse.")
+    create_small_warehouse(connection, SNOWFLAKE_OBJECTS.streaming_warehouse)
+
+    logger.info("Assigning permission to bulk loading role.")
+    create_and_assign_roles(
+        connection,
+        SNOWFLAKE_ROLE.bulk_loading_role,
+        SNOWFLAKE_OBJECTS.database,
+        SNOWFLAKE_OBJECTS.schema,
+        SNOWFLAKE_OBJECTS.bulk_load_warehouse,
+    )
+    logger.info("Assigning permission to stream loading role.")
+    create_and_assign_roles(
+        connection,
+        SNOWFLAKE_ROLE.streaming_data_role,
+        SNOWFLAKE_OBJECTS.database,
+        SNOWFLAKE_OBJECTS.schema,
+        SNOWFLAKE_OBJECTS.streaming_warehouse,
+    )
+
+    logger.info("Snowflake setup complete.")
+
+
+def run(connection: SnowflakeConnection):
+
+    # create_database_and_schema(connection)
+    # create_small_warehouse(connection, SNOWFLAKE_OBJECTS.bulk_load_warehouse)
+    # create_small_warehouse(connection, SNOWFLAKE_OBJECTS.streaming_warehouse)
+    # create_and_assign_roles(
+    #     connection,
+    #     SNOWFLAKE_ROLE.bulk_loading_role,
+    #     SNOWFLAKE_OBJECTS.database,
+    #     SNOWFLAKE_OBJECTS.schema,
+    #     SNOWFLAKE_OBJECTS.bulk_load_warehouse,
+    # )
+    # create_and_assign_roles(
+    #     connection,
+    #     SNOWFLAKE_ROLE.streaming_data_role,
+    #     SNOWFLAKE_OBJECTS.database,
+    #     SNOWFLAKE_OBJECTS.schema,
+    #     SNOWFLAKE_OBJECTS.streaming_warehouse,
+    # )
+
+    # TODO: Deprecate these functions.
+    # streaming_schema_and_database(connection)
+    # create_bulk_loading_objects(connection)
+
+    logger.info("Loading fake customer data.")
     customers: list[Customer] = []
     for _ in range(CUSTOMER_SETTINGS.number_of_customers):
         customers.append(create_fake_customer())
 
     load_customer_data(connection, customers)
-
-    logger.info("End of main script, closing Snowflake connection.")
-    connection.close()
 
 
 def load_customer_data(
@@ -70,91 +127,31 @@ def load_customer_data(
         raise exc
 
 
-# TODO: Depreceate the Snowflake streaming attributes.
-@dataclass
-class SnowflakeStreamingAttributes:
-    database_name: str
-    streaming_schema: str
-    streaming_user: str
-    streaming_user_role: str
-    streaming_warehouse: str
-
-
-# TODO: Depreceate the streaming objects.
-def get_snowflake_attributes() -> SnowflakeStreamingAttributes:
-
-    with open("snowflake_streaming_attributes.json", "r") as file:
-        config = json.load(file)
-
-    return SnowflakeStreamingAttributes(**config)
-
-
-# TODO: Depreceate the streaming objects.
-def streaming_schema_and_database():
-    # Create the streaming database, schema and warehouse.
-    connection = get_snowflake_connection()
-    snowflake_streaming_attributes = get_snowflake_attributes()
-
-    # TODO: Transaction scoping.
-    # TODO: Make the user role a member of the database.
-    cursor = connection.cursor()
-
-    cursor.execute(
-        "CREATE OR REPLACE ROLE "
-        + f"IDENTIFIER('{snowflake_streaming_attributes.streaming_user_role}')"
-    )
-
-    # Configure the database.
-    cursor.execute(
-        "CREATE DATABASE IF NOT EXISTS "
-        + f"IDENTIFIER('{snowflake_streaming_attributes.database_name}')"
-    )
-    cursor.execute(
-        "GRANT USAGE ON DATABASE "
-        + f"IDENTIFIER('{snowflake_streaming_attributes.database_name}') "
-        + f"TO ROLE IDENTIFIER('{snowflake_streaming_attributes.streaming_user_role}')"
-    )
-
-    # Configure the warehouse.
-    cursor.execute(
-        (
-            "CREATE OR REPLACE WAREHOUSE "
-            + f"IDENTIFIER('{snowflake_streaming_attributes.streaming_warehouse}')"
-            + " WITH WAREHOUSE_SIZE = 'SMALL'"
-        )
-    )
-    cursor.execute(
-        "GRANT USAGE ON WAREHOUSE "
-        + f"IDENTIFIER('{snowflake_streaming_attributes.streaming_warehouse}')"
-        + f"TO ROLE IDENTIFIER('{snowflake_streaming_attributes.streaming_user_role}')"
-    )
-
-    # Configure the schema.
-    cursor.execute(f"USE IDENTIFIER('{snowflake_streaming_attributes.database_name}');")
-    cursor.execute(
-        "CREATE OR REPLACE SCHEMA "
-        + f"IDENTIFIER('{snowflake_streaming_attributes.streaming_schema}');"
-    )
-    cursor.execute(
-        "GRANT USAGE ON SCHEMA "
-        + f"IDENTIFIER('{snowflake_streaming_attributes.streaming_schema}') "
-        + f"TO ROLE IDENTIFIER('{snowflake_streaming_attributes.streaming_user_role}')"
-    )
-    # NOTE: In Snowflake the role that creates a table automatically owns it.
-    cursor.execute(
-        "GRANT CREATE TABLE ON SCHEMA "
-        + f"IDENTIFIER('{snowflake_streaming_attributes.streaming_schema}') "
-        + f"TO ROLE IDENTIFIER('{snowflake_streaming_attributes.streaming_user_role}')"
-    )
-
-    # NOTE: In this demo we only have one user.
-    cursor.execute(
-        "GRANT ROLE "
-        + f"IDENTIFIER('{snowflake_streaming_attributes.streaming_user_role}') "
-        + f"TO USER IDENTIFIER('{connection.user}')"
-    )
-
-
 if __name__ == "__main__":
 
-    main()
+    parser = ArgumentParser(
+        description="Init Snowflake objects and/or load fake customer data using those objects."
+    )
+    parser.add_argument(
+        "--mode",
+        nargs="+",
+        choices=["init_job", "run"],
+        help="Use 'init_job' for creating snowflake objects, 'run' for creating fake customers, or both.",
+    )
+
+    args = parser.parse_args()
+
+    logger.info("Connecting to Snowflake")
+    connection = connect(
+        account=SNOWFLAKE_CREDENTIALS.account,
+        user=SNOWFLAKE_CREDENTIALS.user,
+        private_key=SNOWFLAKE_CREDENTIALS.private_key,
+    )
+
+    if "init_job" in args.mode:
+        init_job(connection)
+    if "run" in args.mode:
+        run(connection)
+
+    logger.info("End of main script, closing Snowflake connection.")
+    connection.close()

@@ -36,64 +36,208 @@ def get_create_customer_table_command() -> str:
     """
 
 
-def create_copy_customer_objects(connection: SnowflakeConnection) -> None:
+def create_database_and_schema(connection: SnowflakeConnection) -> None:
+    """Create the database this project will run inside of"""
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "CREATE DATABASE IF NOT EXISTS " + f"IDENTIFIER('{SNOWFLAKE_OBJECTS.database}')"
+    )
+
+    cursor.execute(f"USE IDENTIFIER('{SNOWFLAKE_OBJECTS.database}');")
+    cursor.execute(
+        "CREATE SCHEMA IF NOT EXISTS " + f"IDENTIFIER('{SNOWFLAKE_OBJECTS.schema}');"
+    )
+
+    cursor.close()
+
+
+def create_small_warehouse(connection: SnowflakeConnection, warehouse: str) -> None:
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        (
+            "CREATE WAREHOUSE IF NOT EXISTS "
+            + f"IDENTIFIER('{warehouse}')"
+            + " WITH WAREHOUSE_SIZE = 'SMALL'"
+        )
+    )
+
+    cursor.close()
+
+
+def create_and_assign_roles(
+    connection: SnowflakeConnection,
+    role: str,
+    database: str,
+    schema: str,
+    warehouse: str,
+) -> None:
     """
-    Create the database, schema, warehouse and roles for copying customer
-    data into Snowflake.
+    Create the role that will load the data into a table in <schema> using <warehouse>.
+
+    Assigns that role the user running this python application.
+
+    Args:
+        connection (SnowflakeConnection): Snowflake connection.
+        role (str): Name of the role
+        database (str): The database the schema belongs to.
+        schema (str): The schema the tables will be created in.
+        warehouse (str): The compute warehouse for executing the data load.
+    """
+    cursor = connection.cursor()
+
+    cursor.execute("CREATE ROLE IF NOT EXISTS " + f"IDENTIFIER('{role}')")
+
+    cursor.execute(
+        "GRANT USAGE ON DATABASE "
+        + f"IDENTIFIER('{database}') "
+        + f"TO ROLE IDENTIFIER('{role}')"
+    )
+
+    cursor.execute(
+        "GRANT USAGE ON WAREHOUSE "
+        + f"IDENTIFIER('{warehouse}')"
+        + f"TO ROLE IDENTIFIER('{role}')"
+    )
+
+    cursor.execute(f"USE IDENTIFIER('{database}');")
+
+    cursor.execute(
+        "GRANT USAGE ON SCHEMA "
+        + f"IDENTIFIER('{schema}') "
+        + f"TO ROLE IDENTIFIER('{role}')"
+    )
+
+    # NOTE: In Snowflake the role that creates a table automatically owns it.
+    cursor.execute(
+        "GRANT CREATE TABLE ON SCHEMA "
+        + f"IDENTIFIER('{schema}') "
+        + f"TO ROLE IDENTIFIER('{role}')"
+    )
+
+    # NOTE: In this demo we only have one user.
+    cursor.execute(
+        "GRANT ROLE "
+        + f"IDENTIFIER('{role}') "
+        + f"TO USER IDENTIFIER('{connection.user}')"
+    )
+
+    cursor.close()
+
+
+# TODO: Delete this function.
+def create_bulk_loading_objects(connection: SnowflakeConnection) -> None:
+    """
+    Create the table, warehouse and role for bulk copying data.
 
     Assigns the role to the user who opened the connection.
     """
 
     cursor = connection.cursor()
+
     cursor.execute(
-        "CREATE ROLE IF NOT EXISTS " + f"IDENTIFIER('{SNOWFLAKE_ROLE.role}')"
+        "CREATE ROLE IF NOT EXISTS "
+        + f"IDENTIFIER('{SNOWFLAKE_ROLE.bulk_loading_role}')"
     )
 
-    # Configure the database.
-    cursor.execute(
-        "CREATE DATABASE IF NOT EXISTS " + f"IDENTIFIER('{SNOWFLAKE_OBJECTS.database}')"
-    )
     cursor.execute(
         "GRANT USAGE ON DATABASE "
         + f"IDENTIFIER('{SNOWFLAKE_OBJECTS.database}') "
-        + f"TO ROLE IDENTIFIER('{SNOWFLAKE_ROLE.role}')"
+        + f"TO ROLE IDENTIFIER('{SNOWFLAKE_ROLE.bulk_loading_role}')"
     )
 
     # Configure the warehouse.
     cursor.execute(
         (
             "CREATE WAREHOUSE IF NOT EXISTS "
-            + f"IDENTIFIER('{SNOWFLAKE_OBJECTS.warehouse}')"
+            + f"IDENTIFIER('{SNOWFLAKE_OBJECTS.bulk_load_warehouse}')"
             + " WITH WAREHOUSE_SIZE = 'SMALL'"
         )
     )
     cursor.execute(
         "GRANT USAGE ON WAREHOUSE "
-        + f"IDENTIFIER('{SNOWFLAKE_OBJECTS.warehouse}')"
-        + f"TO ROLE IDENTIFIER('{SNOWFLAKE_ROLE.role}')"
+        + f"IDENTIFIER('{SNOWFLAKE_OBJECTS.bulk_load_warehouse}')"
+        + f"TO ROLE IDENTIFIER('{SNOWFLAKE_ROLE.bulk_loading_role}')"
     )
 
     # Configure the schema.
     cursor.execute(f"USE IDENTIFIER('{SNOWFLAKE_OBJECTS.database}');")
-    cursor.execute(
-        "CREATE SCHEMA IF NOT EXISTS " + f"IDENTIFIER('{SNOWFLAKE_OBJECTS.schema}');"
-    )
+
     cursor.execute(
         "GRANT USAGE ON SCHEMA "
         + f"IDENTIFIER('{SNOWFLAKE_OBJECTS.schema}') "
-        + f"TO ROLE IDENTIFIER('{SNOWFLAKE_ROLE.role}')"
+        + f"TO ROLE IDENTIFIER('{SNOWFLAKE_ROLE.bulk_loading_role}')"
     )
     # NOTE: In Snowflake the role that creates a table automatically owns it.
     cursor.execute(
         "GRANT CREATE TABLE ON SCHEMA "
         + f"IDENTIFIER('{SNOWFLAKE_OBJECTS.schema}') "
-        + f"TO ROLE IDENTIFIER('{SNOWFLAKE_ROLE.role}')"
+        + f"TO ROLE IDENTIFIER('{SNOWFLAKE_ROLE.bulk_loading_role}')"
     )
 
     # NOTE: In this demo we only have one user.
     cursor.execute(
         "GRANT ROLE "
-        + f"IDENTIFIER('{SNOWFLAKE_ROLE.role}') "
+        + f"IDENTIFIER('{SNOWFLAKE_ROLE.bulk_loading_role}') "
+        + f"TO USER IDENTIFIER('{connection.user}')"
+    )
+
+    cursor.close()
+
+
+# TODO: Delete this function.
+def streaming_schema_and_database(connection: SnowflakeConnection):
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "CREATE OR REPLACE ROLE "
+        + f"IDENTIFIER('{SNOWFLAKE_ROLE.streaming_data_role}')"
+    )
+
+    # Configure the database.
+    cursor.execute(
+        "GRANT USAGE ON DATABASE "
+        + f"IDENTIFIER('{SNOWFLAKE_OBJECTS.database}') "
+        + f"TO ROLE IDENTIFIER('{SNOWFLAKE_ROLE.streaming_data_role}')"
+    )
+
+    # Configure the warehouse.
+    cursor.execute(
+        (
+            "CREATE OR REPLACE WAREHOUSE "
+            + f"IDENTIFIER('{SNOWFLAKE_OBJECTS.streaming_warehouse}')"
+            + " WITH WAREHOUSE_SIZE = 'SMALL'"
+        )
+    )
+    cursor.execute(
+        "GRANT USAGE ON WAREHOUSE "
+        + f"IDENTIFIER('{SNOWFLAKE_OBJECTS.streaming_warehouse}')"
+        + f"TO ROLE IDENTIFIER('{SNOWFLAKE_ROLE.streaming_data_role
+                                 }')"
+    )
+
+    # Configure the schema.
+    cursor.execute(f"USE IDENTIFIER('{SNOWFLAKE_OBJECTS.database}');")
+    cursor.execute(
+        "GRANT USAGE ON SCHEMA "
+        + f"IDENTIFIER('{SNOWFLAKE_OBJECTS.schema}') "
+        + f"TO ROLE IDENTIFIER('{SNOWFLAKE_ROLE.streaming_data_role}')"
+    )
+    # NOTE: In Snowflake the role that creates a table automatically owns it.
+    cursor.execute(
+        "GRANT CREATE TABLE ON SCHEMA "
+        + f"IDENTIFIER('{SNOWFLAKE_OBJECTS.schema}') "
+        + f"TO ROLE IDENTIFIER('{SNOWFLAKE_ROLE.streaming_data_role}')"
+    )
+
+    # NOTE: In this demo we only have one user.
+    cursor.execute(
+        "GRANT ROLE "
+        + f"IDENTIFIER('{SNOWFLAKE_ROLE.streaming_data_role}') "
         + f"TO USER IDENTIFIER('{connection.user}')"
     )
 

@@ -47,13 +47,14 @@ class SNOWFLAKE_CREDENTIALS:
 class SNOWFLAKE_OBJECTS:
     database: str = get_secret("SNOWFLAKE_DATABASE")
     schema: str = get_secret("SNOWFLAKE_SCHEMA")
-    warehouse: str = get_secret("SNOWFLAKE_WAREHOUSE")
+    bulk_load_warehouse: str = get_secret("BULK_COPY_WAREHOUSE")
+    streaming_warehouse: str = get_secret("LOAD_STREAM_WAREHOUSE")
 
 
 @dataclass(frozen=True)
 class SNOWFLAKE_ROLE:
-    # TODO: Eventually get rid of this role and manage with Terraform.
-    role: str = get_secret("SNOWFLAKE_ROLE")
+    bulk_loading_role: str = get_secret("BULK_LOAD_ROLE")
+    streaming_data_role: str = get_secret("STREAMING_DATA_ROLE")
 
 
 @dataclass(frozen=True)
