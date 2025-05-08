@@ -7,8 +7,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src/ src/
 
-# TODO: Create a develop build stage with the tests.
-
 FROM base AS production
 
 RUN useradd app && chown -R app:app /app
