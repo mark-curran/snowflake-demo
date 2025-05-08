@@ -1,31 +1,41 @@
 # Local development purposes only.
 
+x-snowflake-loader-common: &snowflake-loader-common
+  image: snowflake-loader:production
+  build:
+    context: load_via_python_api/
+    target: production
+  environment:
+    LOG_LEVEL: INFO
+    NUMBER_OF_CUSTOMER: 5
+    CUSTOMER_TABLE: customer
+    CUSTOMER_JSON_FORMAT: customer_json_format
+    BULK_COPY_WAREHOUSE: BULK_COPY_WAREHOUSE
+    LOAD_STREAM_WAREHOUSE: LOAD_STREAM_WAREHOUSE
+    BULK_LOAD_ROLE: COPY_CUSTOMER_ROLE
+    STREAMING_DATA_ROLE: LOAD_ORDER_STREAM_ROLE
+  secrets:
+    - SNOWFLAKE_USER
+    - SNOWFLAKE_ACCOUNT
+    - SNOWFLAKE_PRIVATE_KEY
+    - SNOWFLAKE_DATABASE
+    - SNOWFLAKE_WAREHOUSE
+    - SNOWFLAKE_SCHEMA
+    - SNOWFLAKE_ROLE
+  volumes:
+    - ./load_via_python_api/src:/app/src
+
 services:
+  init-snowflake:
+    <<: *snowflake-loader-common
+    command: --mode init_job init_job
+
   bulk-data-loader:
-    image: snowflake-loader:develop
-    build:
-      context: load_via_python_api/
-      target: production
-    environment:
-      LOG_LEVEL: INFO
-      NUMBER_OF_CUSTOMER: 5
-      CUSTOMER_TABLE: customer
-      CUSTOMER_JSON_FORMAT: customer_json_format
-      BULK_COPY_WAREHOUSE: BULK_COPY_WAREHOUSE
-      LOAD_STREAM_WAREHOUSE: LOAD_STREAM_WAREHOUSE
-      BULK_LOAD_ROLE: COPY_CUSTOMER_ROLE
-      STREAMING_DATA_ROLE: LOAD_ORDER_STREAM_ROLE
-    secrets:
-      - SNOWFLAKE_USER
-      - SNOWFLAKE_ACCOUNT
-      - SNOWFLAKE_PRIVATE_KEY
-      - SNOWFLAKE_DATABASE
-      - SNOWFLAKE_WAREHOUSE
-      - SNOWFLAKE_SCHEMA
-      - SNOWFLAKE_ROLE
-    volumes:
-      - ./load_via_python_api/src:/app/src
-    command: --mode init_job run
+    <<: *snowflake-loader-common
+    depends_on:
+      init-snowflake:
+        condition: service_completed_successfully
+    command: --mode run
 
 secrets:
   SNOWFLAKE_USER:
