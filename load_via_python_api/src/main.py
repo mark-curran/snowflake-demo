@@ -22,7 +22,6 @@ def main():
         private_key=SNOWFLAKE_CREDENTIALS.private_key,
     )
 
-    # TODO: Eventually manage database, schema and role via terraform.
     create_copy_customer_objects(connection)
 
     customers: list[Customer] = []
