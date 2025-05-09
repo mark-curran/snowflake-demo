@@ -5,6 +5,8 @@ x-snowflake-loader-common: &snowflake-loader-common
   build:
     context: load_via_python_api/
     target: production
+    tags:
+      - 'snowflake-loader:production'
   environment:
     LOG_LEVEL: INFO
     NUMBER_OF_CUSTOMER: 5
@@ -41,15 +43,72 @@ services:
       context: . # NOTE: Need access to shared schemas so build from repo root.
       dockerfile: load_via_kafka/Dockerfile
       target: production
+      tags:
+        - 'nodejs-kafka-client:production'
     environment:
       TOPIC: test.entity
       MODE: produce
     secrets:
       - PRIMARY_CONNECTION_STRING
 
+  init-properties-files:
+    depends_on:
+      kafka-producer:
+        condition: service_completed_successfully
+    image: snowpipe-streaming-connector:os-only
+    build:
+      context: kafka_connector/
+      target: os_only
+      tags:
+        - 'snowpipe-streaming-connector:os-only'
+    volumes:
+      - ./kafka_connector/properties:/tmp/shared-properties
+      - ./kafka_connector/init-properties-files.sh:/init-property-files/init-properties-files.sh
+      - ./snowflake_streaming_attributes.json:/tmp/snowflake-streaming-attributes.json
+      # For sharing properties with the snowpipe-streaming-connector service.
+      - shared-properties:/shared-properties
+    environment:
+      LOAD_STREAM_WAREHOUSE: LOAD_STREAM_WAREHOUSE
+      STREAMING_DATA_ROLE: LOAD_ORDER_STREAM_ROLE
+      SNOWFLAKE_SCHEMA: SNOWFLAKE_SCHEMA
+    secrets:
+      - PRIMARY_CONNECTION_STRING
+      - BOOTSTRAP_SERVER
+      - SNOWFLAKE_ACCOUNT
+      - SNOWFLAKE_USER
+      - SNOWFLAKE_PRIVATE_KEY
+      - SNOWFLAKE_DATABASE
+    entrypoint: 'sh init-property-files/init-properties-files.sh'
+
+  snowpipe-streaming-connector:
+    depends_on:
+      init-properties-files:
+        condition: service_completed_successfully
+    image: snowpipe-streaming-connector:snowpipe_streaming_connector
+    build:
+      context: kafka_connector/
+      target: snowpipe_streaming_connector
+      tags:
+        - 'snowpipe-streaming-connector:snowpipe_streaming_connector'
+    volumes:
+      - shared-properties:/shared-properties
+    command:
+      - sh
+      - -c
+      - |
+        cp /shared-properties/*.properties /opt/kafka/config/ &&
+        bin/connect-standalone.sh \
+        config/connect-standalone.properties \
+        config/snowflake-event-hub-connector.properties
+
+volumes:
+  shared-properties:
+
 secrets:
   PRIMARY_CONNECTION_STRING:
     environment: PRIMARY_CONNECTION_STRING
+  BOOTSTRAP_SERVER:
+    environment: BOOTSTRAP_SERVER
   SNOWFLAKE_USER:
     environment: SNOWFLAKE_USER
   SNOWFLAKE_ACCOUNT:

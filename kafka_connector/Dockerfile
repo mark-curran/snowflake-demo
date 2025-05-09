@@ -10,8 +10,6 @@ ARG USER_AND_GROUP_NAME=kafka
 # Variables to setting up Snowflake connector.
 ARG SNOWFLAKE_CONNECTOR_VERSION=2.2.1
 
-# Create a Kafka user (best practice for security)
-RUN groupadd -r $USER_AND_GROUP_NAME && useradd -r -g $USER_AND_GROUP_NAME $USER_AND_GROUP_NAME
 
 # # Install OS dependencies
 RUN apt-get update
@@ -22,7 +20,7 @@ tar \
 gettext-base \
 jq
 
-FROM os_only AS snowflake_connector
+FROM os_only AS snowpipe_streaming_connector
 
 # Download and extract Kafka.
 # TODO: Replace the COPY comamand with a `wget` command.
@@ -40,13 +38,8 @@ mv /opt/kafka_$SCALA_VERSION-$KAFKA_VERSION $KAFKA_HOME
 COPY tmp/snowflake-kafka-connector-${SNOWFLAKE_CONNECTOR_VERSION}.jar /tmp/snowflake-kafka-connector-${SNOWFLAKE_CONNECTOR_VERSION}.jar
 RUN mv /tmp/snowflake-kafka-connector-${SNOWFLAKE_CONNECTOR_VERSION}.jar $KAFKA_HOME/libs
 
-# TODO: Add more maven libraries as required.
-# wget https://repo1.maven.org/maven2/net/snowflake/snowflake-ingest-sdk/2.1.0/snowflake-ingest-sdk-2.1.0.jar -O $pwd/kafka_2.12-2.8.1/libs/snowflake-ingest-sdk-2.1.0.jar
-# wget https://repo1.maven.org/maven2/net/snowflake/snowflake-jdbc/3.14.5/snowflake-jdbc-3.14.5.jar -O $pwd/kafka_2.12-2.8.1/libs/snowflake-jdbc-3.14.5.jar
-# wget https://repo1.maven.org/maven2/org/bouncycastle/bc-fips/1.0.1/bc-fips-1.0.1.jar -O $pwd/kafka_2.12-2.8.1/libs/bc-fips-1.0.1.jar
-# wget https://repo1.maven.org/maven2/org/bouncycastle/bcpkix-fips/1.0.3/bcpkix-fips-1.0.3.jar -O $pwd/kafka_2.12-2.8.1/libs/bcpkix-fips-1.0.3.jar
-
 # Give the kafka user ownership of the kafka binaries.
+RUN groupadd -r $USER_AND_GROUP_NAME && useradd -r -g $USER_AND_GROUP_NAME $USER_AND_GROUP_NAME
 RUN chown -R kafka:kafka $KAFKA_HOME
 
 # Execute kafka
