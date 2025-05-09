@@ -14,14 +14,12 @@ x-snowflake-loader-common: &snowflake-loader-common
     LOAD_STREAM_WAREHOUSE: LOAD_STREAM_WAREHOUSE
     BULK_LOAD_ROLE: COPY_CUSTOMER_ROLE
     STREAMING_DATA_ROLE: LOAD_ORDER_STREAM_ROLE
+    SNOWFLAKE_SCHEMA: SNOWFLAKE_SCHEMA
   secrets:
     - SNOWFLAKE_USER
     - SNOWFLAKE_ACCOUNT
     - SNOWFLAKE_PRIVATE_KEY
     - SNOWFLAKE_DATABASE
-    - SNOWFLAKE_WAREHOUSE
-    - SNOWFLAKE_SCHEMA
-    - SNOWFLAKE_ROLE
   volumes:
     - ./load_via_python_api/src:/app/src
 
@@ -37,7 +35,21 @@ services:
         condition: service_completed_successfully
     command: --mode run
 
+  kafka-producer:
+    image: nodejs-kafka-client:production
+    build:
+      context: . # NOTE: Need access to shared schemas so build from repo root.
+      dockerfile: load_via_kafka/Dockerfile
+      target: production
+    environment:
+      TOPIC: test.entity
+      MODE: produce
+    secrets:
+      - PRIMARY_CONNECTION_STRING
+
 secrets:
+  PRIMARY_CONNECTION_STRING:
+    environment: PRIMARY_CONNECTION_STRING
   SNOWFLAKE_USER:
     environment: SNOWFLAKE_USER
   SNOWFLAKE_ACCOUNT:
@@ -46,9 +58,3 @@ secrets:
     environment: SNOWFLAKE_PRIVATE_KEY
   SNOWFLAKE_DATABASE:
     environment: SNOWFLAKE_DATABASE
-  SNOWFLAKE_WAREHOUSE:
-    environment: SNOWFLAKE_WAREHOUSE
-  SNOWFLAKE_SCHEMA:
-    environment: SNOWFLAKE_SCHEMA
-  SNOWFLAKE_ROLE:
-    environment: SNOWFLAKE_ROLE

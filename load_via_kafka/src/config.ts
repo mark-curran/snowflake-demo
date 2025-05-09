@@ -1,3 +1,5 @@
+import { readFileSync } from 'fs';
+
 /*
 Import the application config.
 */
@@ -19,12 +21,28 @@ enum Mode {
   both = 'both',
 }
 
+function get_secret(secretName: string): string {
+  // TODO: Check if the secret exists as an environment variable.
+  const value =
+    process.env[secretName] ??
+    readFileSync(`/run/secrets/${secretName}`, 'utf-8');
+
+  if (!value) {
+    throw new Error(
+      `Secret ${secretName} not found in env vars or /run/secrets/${secretName}`,
+    );
+  }
+
+  return value;
+}
+
 function getRequiredEnvVars(): RequiredEnvVars {
-  const primaryConnectionString = process.env.PRIMARY_CONNECTION_STRING;
+  // const primaryConnectionString = process.env.PRIMARY_CONNECTION_STRING;
+  const primaryConnectionString = get_secret('PRIMARY_CONNECTION_STRING');
   const topic = process.env.TOPIC;
   const mode = process.env.MODE;
 
-  // TODO: Make this a loop
+  // TODO: Make this a loop.
   if (!primaryConnectionString) {
     throw new Error('The envvar PRIMARY_CONNECTION_STRING must be defined.');
   }

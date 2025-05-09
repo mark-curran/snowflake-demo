@@ -4,6 +4,8 @@
   "description": "Load data into Snowflake via Kafka.",
   "main": "index.js",
   "scripts": {
+    "build": "tsc",
+    "buildProduction": "tsc --sourceMap false",
     "test": "jest"
   },
   "author": "",
@@ -20,6 +22,7 @@
     "typescript": "^5.8.2"
   },
   "dependencies": {
+    "@snowflake-demo/schemas": "file:../shared_schemas/ts_package",
     "async-mutex": "^0.5.0",
     "node-rdkafka": "^3.3.1",
     "winston": "^3.17.0",
