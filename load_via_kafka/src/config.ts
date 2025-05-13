@@ -7,18 +7,35 @@ type RequiredEnvVars = {
   PRIMARY_CONNECTION_STRING: string;
   TOPIC: string;
   MODE: Mode;
-  // TODO: Optional env vars for LOG_LEVEL
+  LOG_LEVEL: LogLevel;
 };
 type AppConfig = {
   broker: string;
   password: string;
   topic: string;
   mode: Mode;
+  logLevel: LogLevel;
 };
 enum Mode {
   produce = 'produce',
   consume = 'consume',
   both = 'both',
+}
+
+enum LogLevel {
+  INFO = 'info',
+  DEBUG = 'debug',
+}
+
+function getLogLevelFromEnv(): LogLevel {
+  const rawValue = process.env.LOG_LEVEL;
+
+  if (rawValue === 'INFO') return LogLevel.INFO;
+  if (rawValue === 'DEBUG') return LogLevel.DEBUG;
+
+  throw new Error(
+    `Invalid LOG_LEVEL: "${rawValue}". Must be "INFO" or "DEBUG".`,
+  );
 }
 
 function get_secret(secretName: string): string {
@@ -53,6 +70,9 @@ function getRequiredEnvVars(): RequiredEnvVars {
     throw new Error('The envvar MODE must be defined.');
   }
 
+  // Extra validation to change to lower case.
+  const logLevel = getLogLevelFromEnv();
+
   if (!Object.values(Mode).includes(mode as Mode)) {
     throw new Error(
       "The envvar MODE must be one of 'produce', 'consumer' or 'both'.",
@@ -63,6 +83,7 @@ function getRequiredEnvVars(): RequiredEnvVars {
     PRIMARY_CONNECTION_STRING: primaryConnectionString,
     TOPIC: topic,
     MODE: mode as Mode,
+    LOG_LEVEL: logLevel,
   };
 }
 
@@ -79,6 +100,7 @@ function getAppConfig(requiredEnvVars: RequiredEnvVars): AppConfig {
     password: requiredEnvVars.PRIMARY_CONNECTION_STRING,
     topic: requiredEnvVars.TOPIC,
     mode: requiredEnvVars.MODE,
+    logLevel: requiredEnvVars.LOG_LEVEL,
   };
 }
 

@@ -1,10 +1,9 @@
-// TODO: Configure the logger.
-import { createLogger, format, transports } from 'winston';
+import { createLogger, transports } from 'winston';
+import { APP_CONFIG } from './config';
 
 const logger = createLogger({
-  level: 'info',
+  level: APP_CONFIG.logLevel,
   transports: [new transports.Console()],
-  // TODO: Add formatting.
 });
 
 export default logger;

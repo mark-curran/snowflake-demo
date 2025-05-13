@@ -1,5 +1,5 @@
 import logger from './logger';
-import { testConsumeData, consumeBatch } from './consume';
+import { consumeData } from './consume';
 import { produceData } from './produce';
 import { APP_CONFIG } from './config';
 
@@ -15,10 +15,8 @@ async function main() {
   }
 
   if (['consume', 'both'].includes(mode)) {
-    await consumeBatch();
+    await consumeData(20, 2, 5);
   }
-
-  // await testConsumeData();
 
   logger.info('End of main function.');
   process.exit();

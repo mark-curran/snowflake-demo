@@ -33,3 +33,7 @@ npm install
 ## Sources
 
 Based very partially on the [official event hubs nodejs quickstart guide](https://github.com/Azure/azure-event-hubs-for-kafka/tree/master/quickstart/node), but largely built from the ground up by the repository author.
+
+## EnvVars
+
+Need to additionally define the `MODE` environment variable to run this app.

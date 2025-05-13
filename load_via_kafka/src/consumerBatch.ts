@@ -195,7 +195,10 @@ export class ConsumerBatch {
     }
   }
 
-  public async consumeInBatches(max_messages?: number, timeout: number = 5000) {
+  public async consumeInBatches(
+    max_messages?: number,
+    timeout: number = 5000,
+  ): Promise<void> {
     var messagesProcessed = 0;
 
     const timeStartConsumption = Date.now();
