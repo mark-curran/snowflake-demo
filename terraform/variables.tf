@@ -8,3 +8,9 @@ variable "subscription_id" {
   type        = string
   nullable    = false
 }
+
+variable "topic" {
+  description = "The name of the topic (or EventHub) data will be published to."
+  type = string
+  nullable = false
+}
