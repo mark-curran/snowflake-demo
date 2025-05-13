@@ -8,15 +8,15 @@ x-snowflake-loader-common: &snowflake-loader-common
     tags:
       - 'snowflake-loader:production'
   environment:
-    LOG_LEVEL: INFO
-    NUMBER_OF_CUSTOMER: 5
-    CUSTOMER_TABLE: customer
-    CUSTOMER_JSON_FORMAT: customer_json_format
-    BULK_COPY_WAREHOUSE: BULK_COPY_WAREHOUSE
-    LOAD_STREAM_WAREHOUSE: LOAD_STREAM_WAREHOUSE
-    BULK_LOAD_ROLE: COPY_CUSTOMER_ROLE
-    STREAMING_DATA_ROLE: LOAD_ORDER_STREAM_ROLE
-    SNOWFLAKE_SCHEMA: SNOWFLAKE_SCHEMA
+    LOG_LEVEL: ${LOG_LEVEL}
+    NUMBER_OF_CUSTOMER: ${NUMBER_OF_CUSTOMERS}
+    CUSTOMER_TABLE: ${CUSTOMER_TABLE}
+    CUSTOMER_JSON_FORMAT: ${CUSTOMER_JSON_FORMAT}
+    BULK_COPY_WAREHOUSE: ${BULK_COPY_WAREHOUSE}
+    LOAD_STREAM_WAREHOUSE: ${LOAD_STREAM_WAREHOUSE}
+    BULK_LOAD_ROLE: ${BULK_LOAD_ROLE}
+    STREAMING_DATA_ROLE: ${STREAMING_DATA_ROLE}
+    SNOWFLAKE_SCHEMA: ${SNOWFLAKE_SCHEMA}
   secrets:
     - SNOWFLAKE_USER
     - SNOWFLAKE_ACCOUNT
@@ -46,8 +46,9 @@ services:
       tags:
         - 'nodejs-kafka-client:production'
     environment:
-      TOPIC: $TOPIC
+      TOPIC: ${TOPIC}
       MODE: produce
+      LOG_LEVEL: ${LOG_LEVEL}
     secrets:
       - PRIMARY_CONNECTION_STRING
 
@@ -63,9 +64,9 @@ services:
       tags:
         - 'nodejs-kafka-client:production'
     environment:
-      TOPIC: $TOPIC
+      TOPIC: ${TOPIC}
       MODE: consume
-      LOG_LEVEL: DEBUG
+      LOG_LEVEL: ${LOG_LEVEL}
     secrets:
       - PRIMARY_CONNECTION_STRING
 
@@ -86,10 +87,10 @@ services:
       # For sharing properties with the snowpipe-streaming-connector service.
       - shared-properties:/shared-properties
     environment:
-      LOAD_STREAM_WAREHOUSE: LOAD_STREAM_WAREHOUSE
-      STREAMING_DATA_ROLE: LOAD_ORDER_STREAM_ROLE
-      SNOWFLAKE_SCHEMA: SNOWFLAKE_SCHEMA
-      TOPIC: TOPIC
+      LOAD_STREAM_WAREHOUSE: ${LOAD_STREAM_WAREHOUSE}
+      STREAMING_DATA_ROLE: ${STREAMING_DATA_ROLE}
+      SNOWFLAKE_SCHEMA: ${SNOWFLAKE_SCHEMA}
+      TOPIC: ${TOPIC}
     secrets:
       - PRIMARY_CONNECTION_STRING
       - BOOTSTRAP_SERVER
