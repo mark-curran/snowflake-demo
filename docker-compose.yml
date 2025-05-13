@@ -46,8 +46,26 @@ services:
       tags:
         - 'nodejs-kafka-client:production'
     environment:
-      TOPIC: test.entity
+      TOPIC: $TOPIC
       MODE: produce
+    secrets:
+      - PRIMARY_CONNECTION_STRING
+
+  kafka-consumer:
+    depends_on:
+      kafka-producer:
+        condition: service_completed_successfully
+    image: nodejs-kafka-client:production
+    build:
+      context: . # NOTE: Need access to shared schemas so build from repo root.
+      dockerfile: load_via_kafka/Dockerfile
+      target: production
+      tags:
+        - 'nodejs-kafka-client:production'
+    environment:
+      TOPIC: $TOPIC
+      MODE: consume
+      LOG_LEVEL: DEBUG
     secrets:
       - PRIMARY_CONNECTION_STRING
 
@@ -71,6 +89,7 @@ services:
       LOAD_STREAM_WAREHOUSE: LOAD_STREAM_WAREHOUSE
       STREAMING_DATA_ROLE: LOAD_ORDER_STREAM_ROLE
       SNOWFLAKE_SCHEMA: SNOWFLAKE_SCHEMA
+      TOPIC: TOPIC
     secrets:
       - PRIMARY_CONNECTION_STRING
       - BOOTSTRAP_SERVER
