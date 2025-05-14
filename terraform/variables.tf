@@ -14,3 +14,10 @@ variable "topic" {
   type = string
   nullable = false
 }
+
+
+variable "partition_count" {
+  description = "Number of partitions in the event hub."
+  type = number
+  nullable = false
+}

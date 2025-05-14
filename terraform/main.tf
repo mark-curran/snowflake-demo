@@ -23,4 +23,5 @@ module "event_hub" {
   location       = var.az_subscription_default_location
   event_hub_name = var.topic
   auth_rule_name = "test-auth-rule"
+  partition_count = var.partition_count
 }

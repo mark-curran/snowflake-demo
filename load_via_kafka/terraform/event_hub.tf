@@ -19,7 +19,7 @@ resource "azurerm_eventhub_namespace" "event_hub_namespace" {
 resource "azurerm_eventhub" "event_hub" {
   name              = var.event_hub_name
   namespace_id      = azurerm_eventhub_namespace.event_hub_namespace.id
-  partition_count   = 2
+  partition_count   = var.partition_count
   message_retention = 1
 }
 

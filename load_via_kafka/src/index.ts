@@ -11,11 +11,11 @@ async function main() {
   logger.info(`Operating in ${mode} mode.`);
 
   if (['produce', 'both'].includes(mode)) {
-    await produceData(20, 2, 15);
+    await produceData(20, APP_CONFIG.producerCount, 15);
   }
 
   if (['consume', 'both'].includes(mode)) {
-    await consumeData(20, 2, 5);
+    await consumeData(20, APP_CONFIG.partitionCount, 5);
   }
 
   logger.info('End of main function.');

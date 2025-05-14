@@ -3,15 +3,6 @@
 # Get the environment variables.
 source ../.env
 
-# Use this codee block during development to wipe the local and remote state and start afresh.
-# OLD_STORAGE_ACCOUNT=""
-# echo "Removing terraform state point .terraform/"
-# rm -rf .terraform
-# echo "Deleting previous storage account $OLD_STORAGE_ACCOUNT"
-# az storage account delete --resource-group $RESOURCE_GROUP_NAME --name $OLD_STORAGE_ACCOUNT --yes
-# echo "Deleting resource group $RESOURCE_GROUP_NAME"
-# az group delete --name $RESOURCE_GROUP_NAME --yes
-
 echo "Executing Terraform remote state setup script."
 
 if [ -d .terraform ]; then
@@ -48,6 +39,7 @@ else
     echo "az_subscription_default_location = \"$AZ_SUBSCRIPTION_DEFAULT_LOCATION\"" >> terraform.tfvars
     echo "subscription_id = \"$SUBSCRIPTION_ID\"" >> terraform.tfvars
     echo "topic = \"$TOPIC\"" >> terraform.tfvars
+    echo "partition_count = $PARTITION_COUNT" >> terraform.tfvars
 
     echo "Initializing Terraform bakend."
     terraform init \

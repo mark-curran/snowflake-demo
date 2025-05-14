@@ -123,7 +123,14 @@ export class ConsumerBatch {
     gets from each partition.
     */
     // Seek to start position for this batch.
-    await this.seekAndResolve(this.topicPartitionOffsets);
+    try {
+      await this.seekAndResolve(this.topicPartitionOffsets);
+    } catch (err) {
+      logger.info(
+        `Error encounted during seek. You might be at the end of the topic: ${err}`,
+      );
+      return 0;
+    }
 
     // Ask the client to consume more messages without exceeding batch size.
     /* 

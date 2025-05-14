@@ -48,7 +48,15 @@ export async function consumeData(
       consumer,
       initTopicPartitionOffset,
       async (message: Message) => {
-        logger.info(`Processing message: ${JSON.stringify(message)}`);
+        const messageValueAsString = message.value?.toString('utf-8');
+        const topic = message.topic;
+        const partition = message.partition;
+        const offset = message.offset;
+
+        logger.info(
+          `Processed message with topicParitionOffset: ${topic} ${partition} ${offset}`,
+        );
+        logger.info(`Processed message with value: ${messageValueAsString}`);
       },
       batchSize,
       2000,
