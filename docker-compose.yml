@@ -25,6 +25,26 @@ x-snowflake-loader-common: &snowflake-loader-common
   volumes:
     - ./load_via_python_api/src:/app/src
 
+x-kafka-clients-common: &kafka-clients-common
+  image: nodejs-kafka-client:production
+  build:
+    context: . # NOTE: Need access to shared schemas so build from repo root.
+    dockerfile: load_via_kafka/Dockerfile
+    target: production
+    tags:
+      - 'nodejs-kafka-client:production'
+  environment: &kafka-environment
+    TOPIC: ${TOPIC}
+    LOG_LEVEL: ${LOG_LEVEL}
+    PARTITION_COUNT: ${PARTITION_COUNT}
+    PRODUCER_COUNT: ${PRODUCER_COUNT}
+    PRODUCED_MESSAGES_COUNT: ${PRODUCED_MESSAGES_COUNT}
+    PRODUCED_BATCH_SIZE: ${PRODUCED_BATCH_SIZE}
+    CONSUMED_TOTAL_MESSAGES: ${CONSUMED_TOTAL_MESSAGES}
+    CONSUMED_BATCH_SIZE: ${CONSUMED_BATCH_SIZE}
+  secrets:
+    - PRIMARY_CONNECTION_STRING
+
 services:
   init-snowflake:
     <<: *snowflake-loader-common
@@ -38,37 +58,19 @@ services:
     command: --mode run
 
   kafka-producer:
-    image: nodejs-kafka-client:production
-    build:
-      context: . # NOTE: Need access to shared schemas so build from repo root.
-      dockerfile: load_via_kafka/Dockerfile
-      target: production
-      tags:
-        - 'nodejs-kafka-client:production'
+    <<: *kafka-clients-common
     environment:
-      TOPIC: ${TOPIC}
+      <<: *kafka-environment
       MODE: produce
-      LOG_LEVEL: ${LOG_LEVEL}
-    secrets:
-      - PRIMARY_CONNECTION_STRING
 
   kafka-consumer:
     depends_on:
       kafka-producer:
         condition: service_completed_successfully
-    image: nodejs-kafka-client:production
-    build:
-      context: . # NOTE: Need access to shared schemas so build from repo root.
-      dockerfile: load_via_kafka/Dockerfile
-      target: production
-      tags:
-        - 'nodejs-kafka-client:production'
+    <<: *kafka-clients-common
     environment:
-      TOPIC: ${TOPIC}
+      <<: *kafka-environment
       MODE: consume
-      LOG_LEVEL: ${LOG_LEVEL}
-    secrets:
-      - PRIMARY_CONNECTION_STRING
 
   init-properties-files:
     depends_on:

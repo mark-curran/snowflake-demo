@@ -11,11 +11,19 @@ async function main() {
   logger.info(`Operating in ${mode} mode.`);
 
   if (['produce', 'both'].includes(mode)) {
-    await produceData(20, APP_CONFIG.producerCount, 15);
+    await produceData(
+      APP_CONFIG.producedMessagesCount,
+      APP_CONFIG.producerCount,
+      APP_CONFIG.producedBatchSize,
+    );
   }
 
   if (['consume', 'both'].includes(mode)) {
-    await consumeData(20, APP_CONFIG.partitionCount, 5);
+    await consumeData(
+      APP_CONFIG.consumedTotalMessages,
+      APP_CONFIG.partitionCount,
+      APP_CONFIG.consumedBatchSize,
+    );
   }
 
   logger.info('End of main function.');
