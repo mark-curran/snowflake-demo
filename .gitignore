@@ -9,3 +9,6 @@ dist
 
 # MacOS file system metadata.
 .DS_store
+
+# An earlier version of this project was going to have docusaurus docs.
+docs
