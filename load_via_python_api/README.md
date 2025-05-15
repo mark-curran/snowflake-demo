@@ -4,52 +4,22 @@ A repository for interacting running and interacting with Snowflake.
 
 ## Local Environment Setup
 
-## Install Requirements
+First, make sure you have python installed in your environment. See the ".tool-versions" file in this repository to the required version.
 
-Install the requirements file.
+Install the requirements using the command
 
 ```shell
 pip install requirements.txt
 ```
 
-## Generate an Authentication Key-Pair
-
-Create a private RSA key
-
-```shell
-openssl genrsa 2048 | openssl pkcs8 -topk8 -inform PEM -out rsa_key.p8 -nocrypt
-```
-
-Then create a public RSA key from the private one
-
-```shell
-openssl rsa -in rsa_key.p8 -pubout -out rsa_key.pub
-```
-
-Copy the public key from the file "rsa_key.pub" and set the `RSA_PUBLIC_KEY` variable your Snowflake demo environment.
-
-```sql
-ALTER USER example_user SET RSA_PUBLIC_KEY='JERUEHtcve...'
-```
-
-Create a file "connection_config.json" in the root of this repository
-
-```json
-{
-  "account": "<my-account>",
-  "user": "<user-name>",
-  "private_key_file": "<path-to-private-key>",
-  "warehouse": "<warehouse>"
-}
-```
+then run the application using `python src/main.py` from the current directory.
 
 ## Generate Data Models
 
+The data model in this app is generated from a jsonschema specification. Installing the `datamodel-code-generator` library as per the instructions above should suffice to register the binary, however, if using `asdf` you will need to reshim python using `asdf reshim python`.
+
+To generate the data model used in this code run the following command
+
 ```shell
 datamodel-codegen --input ../schema/customer.json --output customer.py --class-name Customer
-datamodel-codegen --input ../schema/order.json --output order.py --class-name Order
 ```
-
-## (Optional) Setup asdf
-
-Install the [asdf runtime manager](https://asdf-vm.com/) to set the current version of python 3.13.1.

@@ -22,20 +22,23 @@ jq
 
 FROM os_only AS snowpipe_streaming_connector
 
-# Download and extract Kafka.
-# TODO: Replace the COPY comamand with a `wget` command.
-COPY tmp/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz /tmp/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz
-# RUN wget https://archive.apache.org/dist/kafka/2.8.1/kafka_2.12-2.8.1.tgz
+WORKDIR /tmp
 
-# Unzip the installation and move it to the installation directory
+# Download and extract Kafka.
+# NOTE: Either use `COPY` or `RUN wget` to get the kafka tarball into the build environment.
+# COPY tmp/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz /tmp/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz
+RUN wget https://archive.apache.org/dist/kafka/${KAFKA_VERSION}/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz || true
+
+# Unzip the installation and move it to the installation directory.
 RUN \
-tar -xvzf /tmp/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz -C /opt && \
-rm /tmp/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz && \
+tar -xvzf kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz -C /opt && \
+rm kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz && \
 mv /opt/kafka_$SCALA_VERSION-$KAFKA_VERSION $KAFKA_HOME
 
 # Install additional libraries.
-# TODO: Replace the COPY comamand with a `wget` command.
-COPY tmp/snowflake-kafka-connector-${SNOWFLAKE_CONNECTOR_VERSION}.jar /tmp/snowflake-kafka-connector-${SNOWFLAKE_CONNECTOR_VERSION}.jar
+# NOTE: Either use `COPY` or `RUN wget` to get the kafka tarball into the build environment.
+# COPY tmp/snowflake-kafka-connector-${SNOWFLAKE_CONNECTOR_VERSION}.jar /tmp/snowflake-kafka-connector-${SNOWFLAKE_CONNECTOR_VERSION}.jar
+RUN wget https://repo1.maven.org/maven2/com/snowflake/snowflake-kafka-connector/${SNOWFLAKE_CONNECTOR_VERSION}/snowflake-kafka-connector-${SNOWFLAKE_CONNECTOR_VERSION}.jar || true
 RUN mv /tmp/snowflake-kafka-connector-${SNOWFLAKE_CONNECTOR_VERSION}.jar $KAFKA_HOME/libs
 
 # Give the kafka user ownership of the kafka binaries.
