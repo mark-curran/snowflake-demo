@@ -53,7 +53,6 @@ function getLogLevelFromEnv(): LogLevel {
 }
 
 function get_secret(secretName: string): string {
-  // TODO: Check if the secret exists as an environment variable.
   const value =
     process.env[secretName] ??
     readFileSync(`/run/secrets/${secretName}`, 'utf-8');

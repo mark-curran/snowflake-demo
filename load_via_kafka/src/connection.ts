@@ -19,11 +19,9 @@ const GLOGAL_CONFIG: GlobalConfig = {
   'sasl.password': APP_CONFIG.password,
 };
 
-// TODO: Retrieve directly from app config.
 export const TOPIC = APP_CONFIG.topic;
 export const consumerConfig: ConsumerGlobalConfig = {
   ...GLOGAL_CONFIG,
-  // TODO: In EventHub do we even need a consumer group at all?
   'group.id': 'happy-consumer-group',
   'enable.auto.commit': false,
 };

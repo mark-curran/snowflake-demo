@@ -43,7 +43,6 @@ export class ConsumerBatch {
     }
 
     // Check there are no active listeners to the 'data' event for this consumer.
-    // TODO: Does `data` belong to an node-rdkafka enum?
     const existingListeners = consumer.listenerCount(
       'data' as KafkaConsumerEvents,
     );

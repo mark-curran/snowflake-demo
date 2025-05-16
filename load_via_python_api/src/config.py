@@ -28,8 +28,6 @@ def get_secret(name: str) -> str:
     else:
         raise ValueError("Path %s does not exist", secret_path.absolute())
 
-    # TODO: Return empty string if path does not exist.
-
 
 @dataclass(frozen=True)
 class APPLICATION_SETTINGS:

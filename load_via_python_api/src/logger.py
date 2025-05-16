@@ -6,9 +6,7 @@ from config import APPLICATION_SETTINGS
 
 # Configure the logger
 logging.basicConfig(
-    # TODO: Configurable log level.
     level=APPLICATION_SETTINGS.log_level,
-    # logging.INFO,  # Default log level INFO
     format="%(asctime)s UTC "
     + "- %(levelname)s"
     + "- %(module)s:%(lineno)d "

@@ -14,12 +14,6 @@ get_secret() {
     fi
 }
 
-# Get the secrets into this shell script.
-# TODO: Delete this test secret.
-# if ! HELLO=$(get_secret HELLO); then
-#     echo "Failed to get secret HELLO" >&2
-#     exit 1
-# fi
 if ! PRIMARY_CONNECTION_STRING=$(get_secret PRIMARY_CONNECTION_STRING); then
     echo "Failed to get secret PRIMARY_CONNECTION_STRING" >&2
     exit 1

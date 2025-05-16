@@ -13,12 +13,10 @@ from logger import logger
 from snowflake.connector import SnowflakeConnection, connect
 from snowflake_utils import (
     create_and_assign_roles,
-    create_bulk_loading_objects,
     create_database_and_schema,
     create_small_warehouse,
     get_copy_into_command,
     get_create_customer_table_command,
-    streaming_schema_and_database,
 )
 
 
@@ -60,28 +58,6 @@ def init_job(connection: SnowflakeConnection):
 
 
 def run(connection: SnowflakeConnection):
-
-    # create_database_and_schema(connection)
-    # create_small_warehouse(connection, SNOWFLAKE_OBJECTS.bulk_load_warehouse)
-    # create_small_warehouse(connection, SNOWFLAKE_OBJECTS.streaming_warehouse)
-    # create_and_assign_roles(
-    #     connection,
-    #     SNOWFLAKE_ROLE.bulk_loading_role,
-    #     SNOWFLAKE_OBJECTS.database,
-    #     SNOWFLAKE_OBJECTS.schema,
-    #     SNOWFLAKE_OBJECTS.bulk_load_warehouse,
-    # )
-    # create_and_assign_roles(
-    #     connection,
-    #     SNOWFLAKE_ROLE.streaming_data_role,
-    #     SNOWFLAKE_OBJECTS.database,
-    #     SNOWFLAKE_OBJECTS.schema,
-    #     SNOWFLAKE_OBJECTS.streaming_warehouse,
-    # )
-
-    # TODO: Deprecate these functions.
-    # streaming_schema_and_database(connection)
-    # create_bulk_loading_objects(connection)
 
     logger.info("Loading fake customer data.")
     customers: list[Customer] = []

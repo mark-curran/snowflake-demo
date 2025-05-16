@@ -15,7 +15,6 @@ COPY load_via_kafka/src/ ./src/
 COPY shared_schemas/ts_package /shared_schemas/ts_package/
 
 # NOTE: This will take a long time because node-rdkafka needs to be compiled
-# TODO: Sort out the dev and prod dependencies.
 # ENV NODE_ENV=production
 RUN npm ci --loglevel verbose
 RUN npm run buildProduction

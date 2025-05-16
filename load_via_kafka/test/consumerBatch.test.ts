@@ -23,7 +23,6 @@ function createMockConsumer(): jest.Mocked<Consumer> {
 }
 
 const initTopicPartitionOffset: TopicPartitionOffset = {
-  // TODO: Make 'test-topic' a module wide const.
   topic: 'test-topic',
   partition: 1,
   offset: 10,
