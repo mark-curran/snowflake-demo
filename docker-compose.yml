@@ -1,5 +1,3 @@
-# Local development purposes only.
-
 x-snowflake-loader-common: &snowflake-loader-common
   image: snowflake-loader:production
   build:
