@@ -83,7 +83,6 @@ services:
     volumes:
       - ./kafka_connector/properties:/tmp/shared-properties
       - ./kafka_connector/init-properties-files.sh:/init-property-files/init-properties-files.sh
-      - ./snowflake_streaming_attributes.json:/tmp/snowflake-streaming-attributes.json
       # For sharing properties with the snowpipe-streaming-connector service.
       - shared-properties:/shared-properties
     environment:
