@@ -101,6 +101,20 @@ If you have forgotten to inject the secrets into your shell prior to running the
 docker compose down && docker system prune -f && docker volume prune -af && docker compose up
 ```
 
+## Cleaning Up
+
+To remove the Terraform resources, use the standard command. Navigate to the terraform directory and run
+
+```shell
+terraform destroy
+```
+
+Snowflake resources are not controlled by Terraform. To remove them upon completion use the accompanying script to render the necessary SQL, which reads the variable names in the `.env` file.
+
+```shell
+source remove_snowflake_resources.sh
+```
+
 ## Local Development
 
 Local development required access to nodejs, python and terraform binaries. We suggest you use `asdf` for version control, though this is not compulsory. Refer to the instructions in each of the individual folders for further instructions.
