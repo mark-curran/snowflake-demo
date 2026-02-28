@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# E.g. 'australiasoutheast'
+# See reference list here: https://learn.microsoft.com/en-us/azure/reliability/regions-list
 echo "Enter default Azure region:"
 read REGION
 

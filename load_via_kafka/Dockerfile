@@ -8,19 +8,25 @@ RUN \
     # NOTE: rdkafka needs openssl-dev to be installed because you need to use it to build rdkafka.
     libssl-dev  
 
+# Build the shared package first.
+COPY shared_schemas/ /shared_schemas/
+WORKDIR /shared_schemas/ts_package
+RUN npm ci && npm run build
+
+# Now build the actual package
 WORKDIR /builder
 
 COPY load_via_kafka/package.json load_via_kafka/package-lock.json load_via_kafka/tsconfig.json ./
 COPY load_via_kafka/src/ ./src/
-COPY shared_schemas/ts_package /shared_schemas/ts_package/
 
 # NOTE: This will take a long time because node-rdkafka needs to be compiled
-# ENV NODE_ENV=production
+
 RUN npm ci --loglevel verbose
 RUN npm run buildProduction
 
 FROM builder AS production
 
+ENV NODE_ENV=production
 RUN useradd -m app
 
 WORKDIR /app

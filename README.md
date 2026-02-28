@@ -82,7 +82,7 @@ Install the `terraform` cli if you have not already done so using the [official 
 
 Navigate to the "terraform/" folder and run `source remote_state_setup.sh`. This will create a remote state file on Azure for tracking your Azure resources. This script will also write some account identifiers and required config (such as the name of the EventHub a.k.a. the kafk topic) to "terraform/terraform.tfvars". This file is not included in version control.
 
-Once this script exits run `terraform apply`, answer "y" at the prompt. This will create your Azure infrastructure.
+Once this script exits run `terraform apply`, answer "yes" at the prompt. This will create your Azure infrastructure.
 
 Terraform will capture two sensitive values that you will need to save for later use. You can expose them using the `terraform output -json` command. Save them in the following variables.
 

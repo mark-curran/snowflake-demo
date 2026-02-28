@@ -7,7 +7,7 @@ x-snowflake-loader-common: &snowflake-loader-common
       - 'snowflake-loader:production'
   environment:
     LOG_LEVEL: ${LOG_LEVEL}
-    NUMBER_OF_CUSTOMER: ${NUMBER_OF_CUSTOMERS}
+    NUMBER_OF_CUSTOMERS: ${NUMBER_OF_CUSTOMERS}
     CUSTOMER_TABLE: ${CUSTOMER_TABLE}
     CUSTOMER_JSON_FORMAT: ${CUSTOMER_JSON_FORMAT}
     BULK_COPY_WAREHOUSE: ${BULK_COPY_WAREHOUSE}
